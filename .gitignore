@@ -5,3 +5,4 @@ dist/
 cache/
 *.log
 generated_preflight.txt
+boot-*.txt

@@ -14,7 +14,18 @@ pub fn init() {
     // a crashed game still being torn down by Windows Error Reporting can keep the old log locked:
     // fall back to a per-process file rather than running the whole session without a log
     let open = |name: String| OpenOptions::new().create(true).write(true).truncate(true).open(dir.join(name));
-    let file = open("FortniteRing.log".into()).or_else(|_| open(format!("FortniteRing-{}.log", std::process::id())));
+    let first = open("FortniteRing.log".into());
+    let first_err = first.as_ref().err().map(|e| e.to_string());
+    let file = first.or_else(|_| open(format!("FortniteRing-{}.log", std::process::id())));
+    // breadcrumb next to the DLL: some launches never produced a log, and this says why
+    breadcrumb(&format!(
+        "pid {}\ndata folder {}\nLOCALAPPDATA {:?}\nFortniteRing.log: {}\nlog in use: {}\n",
+        std::process::id(),
+        dir.display(),
+        std::env::var_os("LOCALAPPDATA"),
+        first_err.as_deref().unwrap_or("opened"),
+        match &file { Ok(_) => "yes".to_string(), Err(e) => format!("no ({e})") },
+    ));
     if let Ok(f) = file {
         *LOG.lock().unwrap() = Some((f, Instant::now()));
     }
@@ -53,6 +64,17 @@ unsafe extern "system" fn on_exception(info: *mut EXCEPTION_POINTERS) -> i32 {
         }
     }
     0 // EXCEPTION_CONTINUE_SEARCH
+}
+
+fn breadcrumb(text: &str) {
+    use windows::Win32::Foundation::HMODULE;
+    use windows::Win32::System::LibraryLoader::GetModuleFileNameW;
+    let mut buf = [0u16; 1024];
+    let n = unsafe { GetModuleFileNameW(Some(HMODULE(crate::MODULE as *mut _)), &mut buf) } as usize;
+    let dll = std::path::PathBuf::from(String::from_utf16_lossy(&buf[..n]));
+    if let Some(dir) = dll.parent() {
+        let _ = std::fs::write(dir.join(format!("boot-{}.txt", std::process::id())), text);
+    }
 }
 
 pub fn write(msg: &str) {

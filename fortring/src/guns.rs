@@ -120,15 +120,24 @@ fn set_shot(damage: f32, speed: f32, range: f32, radius: f32) -> bool {
 /// CSBulletManager::SpawnBullet in eldenring.exe 2.7.1.0 / 2.7.1.1 (fromsoftware-rs rva_ww.rs / rva_jp.rs;
 /// its rva module is crate-private).
 const SPAWN_BULLET_RVA: usize = 0x3a_2cb0;
-type FnSpawn = unsafe extern "C" fn(*mut c_void, *mut i32, *const SpawnData, *mut i32);
+/// fromsoftware-rs declares 4 arguments and no result, but calls made that way crash 2.7.1.0 inside
+/// SpawnBullet (offset 0x38e62d), for the mod's own shots and when the hook forwarded the game's.
+/// So the detour forwards 8 argument slots and the result untouched, and logs the extra ones.
+type FnSpawn = unsafe extern "C" fn(usize, usize, usize, usize, usize, usize, usize, usize) -> usize;
 static SPAWN_ORIGINAL: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
 /// The spawn data of a bullet the game made itself (player-owned preferred). A zero-filled SpawnData
 /// crashed 2.7.1.0 inside SpawnBullet (read of address -1), so gun shots start from this template.
 static TEMPLATE: Mutex<Option<([u8; SPAWN_DATA_SIZE], bool)>> = Mutex::new(None);
+const SPAWN_SIGNATURE_KNOWN: bool = false;
 const SPAWN_DATA_SIZE: usize = std::mem::size_of::<SpawnData>();
 thread_local!(static OURS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) });
 
-unsafe extern "C" fn spawn_detour(mgr: *mut c_void, out: *mut i32, data: *const SpawnData, err: *mut i32) {
+unsafe extern "C" fn spawn_detour(mgr: usize, out: usize, data_addr: usize, err: usize, a5: usize, a6: usize, a7: usize, a8: usize) -> usize {
+    let data = data_addr as *const SpawnData;
+    static CALLS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+    if CALLS.fetch_add(1, Ordering::Relaxed) < 5 {
+        crate::log!("guns: game SpawnBullet(mgr {mgr:#x}, out {out:#x}, data {data_addr:#x}, err {err:#x}, {a5:#x}, {a6:#x}, {a7:#x}, {a8:#x})");
+    }
     if !data.is_null() && !OURS.with(|o| o.get()) {
         let bytes: [u8; SPAWN_DATA_SIZE] = unsafe { std::ptr::read(data as *const [u8; SPAWN_DATA_SIZE]) };
         let by_player = world::player().map(|p| unsafe { (*data).owner == p.chr_ins.field_ins_handle }).unwrap_or(false);
@@ -140,7 +149,7 @@ unsafe extern "C" fn spawn_detour(mgr: *mut c_void, out: *mut i32, data: *const 
         }
     }
     let orig: FnSpawn = unsafe { std::mem::transmute(SPAWN_ORIGINAL.load(Ordering::Acquire)) };
-    unsafe { orig(mgr, out, data, err) }
+    unsafe { orig(mgr, out, data_addr, err, a5, a6, a7, a8) }
 }
 
 /// Watches the game's own bullet spawns for a SpawnData template (called once at boot).
@@ -155,6 +164,14 @@ pub fn install_spawn_hook() {
 
 fn spawn(bullet: i64, from: Vec3, dir: Vec3) {
     let (Some(p), Some(mgr)) = (world::player(), world::bullets()) else { return };
+    // the mod's own shots stay off until SpawnBullet's real signature is known (see FnSpawn)
+    if !SPAWN_SIGNATURE_KNOWN {
+        static WARNED_SIG: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+        if !WARNED_SIG.swap(true, Ordering::Relaxed) {
+            crate::log!("guns: shooting disabled until SpawnBullet's signature is confirmed (see the SpawnBullet lines above)");
+        }
+        return;
+    }
     let Some((template, _)) = *TEMPLATE.lock().unwrap() else {
         static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
         if !WARNED.swap(true, Ordering::Relaxed) {
