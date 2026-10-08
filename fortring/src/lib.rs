@@ -40,6 +40,7 @@ pub unsafe extern "system" fn DllMain(module: HINSTANCE, reason: u32, _: *mut co
     unsafe { MODULE = module.0 as usize };
     log::init();
     log!("Fortnite Ring {} loading", env!("CARGO_PKG_VERSION"));
+    log!("data folder {} (LOCALAPPDATA={:?})", paths::data_dir().display(), std::env::var_os("LOCALAPPDATA"));
     if let Err(why) = safety::offline_and_safe() {
         log!("{why}");
         return 1;
@@ -62,6 +63,7 @@ fn boot() {
     };
     log!("boot: game task system up");
     input::install();
+    guns::install_spawn_hook();
     audio::init();
     assets::load();
 

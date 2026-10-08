@@ -3,6 +3,8 @@
 // and passes the Fortnite folder ({game:fortnite}). Nothing from Fortnite ships with the mod.
 //
 //   FortniteRingSetup.exe --fortnite "<Fortnite folder>" --out "<cache folder>" [--outfit CID_...] [--pickaxe Pickaxe_ID_...]
+//   FortniteRingSetup.exe --fortnite "<Fortnite folder>" --list "<regex>"   (prints every matching package path; for fixing sheet queries)
+//   FortniteRingSetup.exe --fortnite "<Fortnite folder>" --dump "<package path>"   (prints the package's exports as JSON)
 //
 // Steps: read the AES keys and type mappings for the installed build from fortnite-api.com, mount the
 // paks with CUE4Parse, resolve every row of sheets/fortnite_assets.json (Generated.cs), export it, and
@@ -54,22 +56,26 @@ public static class Program
         var fortnite = Arg("--fortnite", Environment.GetEnvironmentVariable("FORTNITE_RING_FORTNITE") ?? "");
         var outfit = Arg("--outfit", Environment.GetEnvironmentVariable("FORTNITE_RING_OUTFIT") ?? DefaultOutfit);
         var pickaxe = Arg("--pickaxe", Environment.GetEnvironmentVariable("FORTNITE_RING_PICKAXE") ?? DefaultPickaxe);
+        var list = Arg("--list");
+        var dump = Arg("--dump");
+        var inspecting = list.Length > 0 || dump.Length > 0; // inspection modes leave setup.log and the manifest alone
         Directory.CreateDirectory(outDir);
-        _log = new StreamWriter(Path.Combine(outDir, "..", "setup.log"), append: false);
+        if (!inspecting) _log = new StreamWriter(Path.Combine(outDir, "..", "setup.log"), append: false);
         Log($"Fortnite Ring setup 0.1.0: Fortnite at '{fortnite}', cache at '{outDir}'");
         try
         {
-            return await Run(fortnite, outDir, outfit, pickaxe);
+            return await Run(fortnite, outDir, outfit, pickaxe, list.Length > 0 ? list : null, dump.Length > 0 ? dump : null);
         }
         catch (Exception e)
         {
             Log($"FAILED: {e}");
+            if (inspecting) return 1;
             await WriteManifest(outDir, "unknown", new(), Sheet.Assets.Where(a => a.Required).Select(a => a.Id).ToList(), e.Message);
             return 1;
         }
     }
 
-    static async Task<int> Run(string fortnite, string outDir, string outfit, string pickaxe)
+    static async Task<int> Run(string fortnite, string outDir, string outfit, string pickaxe, string? list, string? dump)
     {
         var paks = Path.Combine(fortnite, "FortniteGame", "Content", "Paks");
         if (!Directory.Exists(paks) || Directory.GetFiles(paks, "*.utoc").Length == 0)
@@ -80,7 +86,7 @@ public static class Program
         var aes = aesDoc.RootElement.GetProperty("data");
         var build = aes.GetProperty("build").GetString() ?? "unknown";
         var manifestPath = Path.Combine(outDir, "manifest.json");
-        if (File.Exists(manifestPath))
+        if (list == null && dump == null && File.Exists(manifestPath))
         {
             using var old = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath));
             if (old.RootElement.GetProperty("fortnite_build").GetString() == build &&
@@ -123,6 +129,17 @@ public static class Program
             throw new InvalidOperationException("Fortnite's files could not be opened with the published keys (Fortnite may have just updated; try again later).");
 
         var paths = provider.Files.Keys.Where(k => k.EndsWith(".uasset", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (list != null)
+        {
+            var lrx = new Regex(list, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+            foreach (var p in paths.Where(p => lrx.IsMatch(Path.ChangeExtension(p, null))).OrderBy(p => p)) Console.WriteLine(p);
+            return 0;
+        }
+        if (dump != null)
+        {
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(provider.LoadPackage(dump).GetExports(), Newtonsoft.Json.Formatting.Indented));
+            return 0;
+        }
         var found = new Dictionary<string, string>();
         var missing = new List<string>();
         foreach (var row in Sheet.Assets)
@@ -155,6 +172,23 @@ public static class Program
         await WriteManifest(outDir, build, found, missing, null);
         Log($"done: {found.Count} found, {missing.Count} required missing");
         return missing.Count == 0 ? 0 : 2;
+    }
+
+    static bool IsSfnt(byte[] b, int at) =>
+        b.Length >= at + 4 && ((b[at] == 0 && b[at + 1] == 1 && b[at + 2] == 0 && b[at + 3] == 0) ||
+                               "OTTO,true,ttcf".Split(',').Any(t => b[at] == t[0] && b[at + 1] == t[1] && b[at + 2] == t[2] && b[at + 3] == t[3]));
+
+    /// Cooked font bytes (.ufont bulk data) start with an int32 byte count before the TrueType/OpenType file
+    /// (seen on Fortnite 42.30); the DLL's font loader needs the bare file.
+    static byte[] StripFontPrefix(byte[] data)
+    {
+        if (IsSfnt(data, 0)) return data;
+        if (IsSfnt(data, 4))
+        {
+            var n = BitConverter.ToInt32(data, 0);
+            return data.AsSpan(4, n > 0 && n <= data.Length - 4 ? n : data.Length - 4).ToArray();
+        }
+        throw new InvalidDataException("font data is not a TrueType/OpenType file");
     }
 
     static string InsertSuffix(string path, string suffix) =>
@@ -203,6 +237,14 @@ public static class Program
         if (o.TryGetValue(out FSoftObjectPath soft, prop)) return soft.TryLoad(out var u) ? u : null;
         if (o.TryGetValue(out FPackageIndex idx, prop)) return idx.TryLoad(out var u) ? u : null;
         if (o.TryGetValue(out UObject obj, prop)) return obj;
+        // current item definitions keep icons and pickup meshes in DataList (instanced structs):
+        // find the first soft reference named `prop` anywhere in the object and load it by path
+        var json = Newtonsoft.Json.Linq.JToken.FromObject(o, Newtonsoft.Json.JsonSerializer.Create());
+        foreach (var p in json.SelectTokens("$.." + prop + ".AssetPathName"))
+        {
+            var path = (string?)p;
+            if (!string.IsNullOrEmpty(path) && o.Owner?.Provider?.TryLoadPackageObject(path, out var loaded) == true) return loaded;
+        }
         return null;
     }
 
@@ -259,6 +301,7 @@ public static class Program
                     if (ufont != null) data = await obj.Owner!.Provider!.SaveAssetAsync(ufont);
                 }
                 if (data == null || data.Length == 0) throw new InvalidDataException("font data not found");
+                data = StripFontPrefix(data);
                 await File.WriteAllBytesAsync(target, data);
                 break;
             case "sound":
@@ -275,20 +318,65 @@ public static class Program
                 var file = results.SelectMany(r => r.DiskFilePaths ?? []).FirstOrDefault(f => f.EndsWith(kind == "anim" ? ".psa" : ".glb", StringComparison.OrdinalIgnoreCase))
                            ?? throw new InvalidDataException($"exporter wrote no {(kind == "anim" ? "psa" : "glb")}: {string.Join(", ", results.Select(r => r.Error?.Message))}");
                 File.Copy(file, target, true);
-                // keep the mesh's textures next to it (glTF references them by relative path)
-                foreach (var png in results.SelectMany(r => r.DiskFilePaths ?? []).Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)))
-                {
-                    var rel = Path.GetRelativePath(Path.GetDirectoryName(file)!, png);
-                    var dst = Path.Combine(Path.GetDirectoryName(target)!, rel);
-                    Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
-                    File.Copy(png, dst, true);
-                }
+                if (kind != "anim") KeepTextures(file, target, results.SelectMany(r => r.DiskFilePaths ?? []));
                 try { Directory.Delete(tmp, true); } catch { }
                 break;
         }
     }
 
-    /// PCM/ADPCM decode to WAV directly; Wwise (wem) and Bink go through the bundled vgmstream-cli.
+    /// Copies a glTF's textures into "<name>_tex/" next to it and points the .glb at them. The exporter writes
+    /// them as relative paths like "../../Textures/x.png", which would land outside the cache folder.
+    static void KeepTextures(string glb, string target, IEnumerable<string> files)
+    {
+        var bytes = File.ReadAllBytes(glb);
+        if (bytes.Length < 20 || BitConverter.ToUInt32(bytes, 0) != 0x46546C67) return; // "glTF"
+        var jsonLen = (int)BitConverter.ToUInt32(bytes, 12);
+        var json = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Encoding.UTF8.GetString(bytes, 20, jsonLen))!;
+        var pngs = files.Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)).ToDictionary(Path.GetFullPath, f => f, StringComparer.OrdinalIgnoreCase);
+        var texDir = Path.GetFileNameWithoutExtension(target) + "_tex";
+        var changed = false;
+        foreach (var image in json["images"]?.AsArray() ?? [])
+        {
+            var uri = image?["uri"]?.GetValue<string>();
+            if (uri == null || uri.StartsWith("data:")) continue;
+            var src = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(glb)!, Uri.UnescapeDataString(uri)));
+            if (!pngs.ContainsKey(src) && !File.Exists(src)) continue;
+            var dst = Path.Combine(Path.GetDirectoryName(target)!, texDir, Path.GetFileName(src));
+            Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+            File.Copy(src, dst, true);
+            image!["uri"] = texDir + "/" + Uri.EscapeDataString(Path.GetFileName(src));
+            changed = true;
+        }
+        if (!changed) return;
+        var newJson = System.Text.Encoding.UTF8.GetBytes(json.ToJsonString());
+        var padded = (newJson.Length + 3) & ~3;
+        var rest = bytes.AsSpan(20 + jsonLen).ToArray(); // BIN chunk, unchanged
+        using var w = new BinaryWriter(File.Create(target));
+        w.Write(0x46546C67u); w.Write(2u); w.Write((uint)(12 + 8 + padded + rest.Length));
+        w.Write((uint)padded); w.Write(0x4E4F534Au); // "JSON"
+        w.Write(newJson); for (var i = newJson.Length; i < padded; i++) w.Write((byte)' ');
+        w.Write(rest);
+    }
+
+    /// vgmstream-cli (Wwise/Bink/ADPCM to WAV) from its official release, kept with the other downloaded tools.
+    const string VgmstreamZip = "https://github.com/vgmstream/vgmstream/releases/download/r2117/vgmstream-win64.zip";
+
+    static async Task<string> Vgmstream(string tools)
+    {
+        var bundled = Path.Combine(AppContext.BaseDirectory, "vgmstream", "vgmstream-cli.exe");
+        if (File.Exists(bundled)) return bundled;
+        var dir = Path.Combine(tools, "vgmstream");
+        var exe = Path.Combine(dir, "vgmstream-cli.exe");
+        if (File.Exists(exe)) return exe;
+        Log("downloading vgmstream r2117");
+        var zip = Path.Combine(tools, "vgmstream-win64.zip");
+        await File.WriteAllBytesAsync(zip, await Http.GetByteArrayAsync(VgmstreamZip));
+        System.IO.Compression.ZipFile.ExtractToDirectory(zip, dir, true);
+        File.Delete(zip);
+        return exe;
+    }
+
+    /// PCM/ADPCM decode to WAV directly; Wwise (wem) and Bink go through vgmstream-cli.
     static async Task WriteWav(byte[] audio, string fmt, string target, string tools)
     {
         if (audio.Length > 12 && audio[0] == 'R' && audio[1] == 'I' && audio[2] == 'F' && audio[3] == 'F' &&
@@ -297,14 +385,20 @@ public static class Program
             await File.WriteAllBytesAsync(target, audio);
             return;
         }
-        var vgm = Path.Combine(AppContext.BaseDirectory, "vgmstream", "vgmstream-cli.exe");
-        if (!File.Exists(vgm)) throw new FileNotFoundException("vgmstream-cli.exe missing next to the setup tool");
+        // RAD Audio (UE 5.4+, most Fortnite sounds) is not in vgmstream. Its decoder needs Epic's RAD Audio SDK
+        // (Unreal Engine source), so it is not downloaded here: a radadec.exe placed in tools/ is used if present.
+        var rada = fmt.Equals("rada", StringComparison.OrdinalIgnoreCase);
+        var radadec = Path.Combine(tools, "radadec.exe");
+        if (rada && !File.Exists(radadec))
+            throw new InvalidDataException($"RAD Audio sound: put a RADA decoder at {radadec} to convert it");
+        var converter = rada ? radadec : await Vgmstream(tools);
+        var args = rada ? "-i \"{0}\" -o \"{1}\"" : "-o \"{1}\" \"{0}\"";
         var src = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + "." + fmt.ToLowerInvariant());
         await File.WriteAllBytesAsync(src, audio);
-        var p = Process.Start(new ProcessStartInfo(vgm, $"-o \"{target}\" \"{src}\"") { CreateNoWindow = true, UseShellExecute = false })!;
+        var p = Process.Start(new ProcessStartInfo(converter, string.Format(args, src, target)) { CreateNoWindow = true, UseShellExecute = false })!;
         await p.WaitForExitAsync();
         File.Delete(src);
-        if (p.ExitCode != 0 || !File.Exists(target)) throw new InvalidDataException($"vgmstream could not convert {fmt}");
+        if (p.ExitCode != 0 || !File.Exists(target)) throw new InvalidDataException($"{Path.GetFileName(converter)} could not convert {fmt}");
     }
 
     static void WriteSilence(string target)

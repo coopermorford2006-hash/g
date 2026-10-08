@@ -29,6 +29,9 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, fall_damage_pts: f32) {
     if max <= 0 {
         return;
     }
+    if st.last_hp >= 0 && hp < st.last_hp {
+        crate::log!("health: Elden Ring HP {} -> {hp} of {max} (shield {:.0})", st.last_hp, st.saved.shield);
+    }
     if st.last_hp >= 0 && hp < st.last_hp && hp > 0 && st.saved.shield > 0.0 {
         let (shield, back) = absorb(st.saved.shield, st.last_hp - hp, max);
         st.saved.shield = shield;

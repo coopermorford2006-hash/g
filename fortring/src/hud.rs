@@ -76,13 +76,15 @@ impl ImguiRenderLoop for Hud {
         }
         crate::log!("hud: {} Fortnite textures loaded", self.tex.len());
         let font = crate::paths::cache_dir().join(FORTNITE_ASSETS[FORTNITE_ASSETS_FONT_BURBANK].out);
-        if let Ok(ttf) = std::fs::read(&font) {
+        // ImGui asserts (and the game aborts) on bytes stb_truetype can't parse: only hand it a real sfnt
+        let is_sfnt = |b: &[u8]| matches!(b.get(..4), Some([0, 1, 0, 0]) | Some(b"OTTO") | Some(b"true") | Some(b"ttcf"));
+        if let Some(ttf) = std::fs::read(&font).ok().filter(|b| is_sfnt(b)) {
             let ttf: &'static [u8] = Box::leak(ttf.into_boxed_slice());
             ctx.fonts().add_font(&[FontSource::TtfData { data: ttf, size_pixels: 22.0, config: None }]);
             self.big_font = Some(ctx.fonts().add_font(&[FontSource::TtfData { data: ttf, size_pixels: 44.0, config: None }]));
             crate::log!("hud: Burbank font loaded");
         } else {
-            crate::log!("hud: Burbank font missing, using the default font");
+            crate::log!("hud: Burbank font missing or not a TrueType/OpenType file, using the default font");
         }
     }
 
@@ -91,8 +93,14 @@ impl ImguiRenderLoop for Hud {
         let display = ui.io().display_size;
         let dl = ui.get_foreground_draw_list();
         let Ok(st) = STATE.lock() else { return };
-        if !crate::assets::ready() {
-            dl.add_text([24.0, 24.0], col([1.0, 0.85, 0.3, 1.0]), "Fortnite Ring: Fortnite content not found. Press Play in Melty again to run the Fortnite setup.");
+        match crate::assets::missing() {
+            None => dl.add_text([24.0, 24.0], col([1.0, 0.85, 0.3, 1.0]), "Fortnite Ring: Fortnite content not found. Press Play in Melty again to run the Fortnite setup."),
+            Some(0) => {}
+            Some(n) => dl.add_text(
+                [24.0, 24.0],
+                col([1.0, 0.85, 0.3, 0.8]),
+                format!("Fortnite Ring: {n} Fortnite assets could not be converted (see %LOCALAPPDATA%\\FortniteRing\\setup.log)"),
+            ),
         }
         if !in_game {
             return;

@@ -148,6 +148,18 @@ pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
     let q = eldenring::rotation::Quaternion(0.0, half.sin(), 0.0, half.cos());
     phys.orientation = q;
     phys.interpolated_orientation = q;
+
+    // for in-game testing: where the controller thinks the ground is, every 2 s
+    static LAST_TRACE: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+    let mut last = LAST_TRACE.lock().unwrap();
+    if last.map(|l| l.elapsed().as_secs_f32() > 2.0).unwrap_or(true) {
+        *last = Some(std::time::Instant::now());
+        let below = world::map_ray(pos + Vec3::Y * 0.5, pos - Vec3::Y * 20.0).map(|g| pos.y - g.y);
+        crate::log!(
+            "movement: pos {pos:.2} grounded {} vel.y {:.2} speed {:.2} ground below {below:?} (map only)",
+            b.grounded, b.vel.y, Vec3::new(b.vel.x, 0.0, b.vel.z).length()
+        );
+    }
     fall_damage
 }
 

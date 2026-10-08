@@ -18,9 +18,11 @@ pub struct Frame {
     pub last_save: f64,
     pub ui_seen: [bool; 0x46],
     pub loaded_slot: Option<String>,
+    /// Elden Ring drives until this time (seconds since boot), after an interaction.
+    pub er_hold_until: f64,
 }
 
-pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None });
+pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0 });
 
 /// True when Elden Ring itself should drive: a menu, map, dialogue, riding Torrent, a ladder, death.
 fn er_drives() -> bool {
@@ -85,17 +87,25 @@ pub fn gameplay() {
         }
     }
 
-    let er = er_drives();
+    // after an Elden Ring interaction (door, lever, grace, NPC, pickup) the game plays its own animation
+    // and moves the character: let it drive for a moment instead of overwriting the position
+    let er = er_drives() || t < fr.er_hold_until;
     if let Some(fe) = world::fe_man() {
         if !er && fe.hud_state == CSFeManHudState::Default {
             fe.hud_state = CSFeManHudState::HideAll; // systems:hide_er_hud
         }
     }
     input::MOD_OWNS_INPUT.store(!er, std::sync::atomic::Ordering::Relaxed);
-    for c in [CONTROLS_MAP] {
-        input::passthrough(&CONTROLS[c], !er && inp.down(c));
+    // every control with an Elden Ring key presses that key (interact was blocked and never forwarded)
+    for (c, row) in CONTROLS.iter().enumerate() {
+        if row.er_key != "none" && row.owner != "mod" {
+            input::passthrough(row, !er && inp.down(c));
+        }
     }
-    input::passthrough(&CONTROLS[CONTROLS_FLASK], !er && inp.down(CONTROLS_FLASK));
+    if !er && inp.pressed(CONTROLS_INTERACT) {
+        fr.er_hold_until = t + 2.5;
+        crate::log!("input: interact passed to Elden Ring; it drives for 2.5 s");
+    }
     if er {
         if fr.driving {
             movement::release();

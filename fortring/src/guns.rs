@@ -8,7 +8,9 @@ use crate::state::{Held, State};
 use crate::world::{self, v};
 use eldenring::cs::{AtkParam_Pc, Bullet};
 use glam::Vec3;
-use std::sync::atomic::{AtomicI64, Ordering};
+use std::ffi::c_void;
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicI64, AtomicPtr, Ordering};
 
 /// The rows picked from er_rows candidates at boot (-1 = none found).
 pub static GUN_BULLET: AtomicI64 = AtomicI64::new(-1);
@@ -115,9 +117,52 @@ fn set_shot(damage: f32, speed: f32, range: f32, radius: f32) -> bool {
     true
 }
 
+/// CSBulletManager::SpawnBullet in eldenring.exe 2.7.1.0 / 2.7.1.1 (fromsoftware-rs rva_ww.rs / rva_jp.rs;
+/// its rva module is crate-private).
+const SPAWN_BULLET_RVA: usize = 0x3a_2cb0;
+type FnSpawn = unsafe extern "C" fn(*mut c_void, *mut i32, *const SpawnData, *mut i32);
+static SPAWN_ORIGINAL: AtomicPtr<c_void> = AtomicPtr::new(std::ptr::null_mut());
+/// The spawn data of a bullet the game made itself (player-owned preferred). A zero-filled SpawnData
+/// crashed 2.7.1.0 inside SpawnBullet (read of address -1), so gun shots start from this template.
+static TEMPLATE: Mutex<Option<([u8; SPAWN_DATA_SIZE], bool)>> = Mutex::new(None);
+const SPAWN_DATA_SIZE: usize = std::mem::size_of::<SpawnData>();
+thread_local!(static OURS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) });
+
+unsafe extern "C" fn spawn_detour(mgr: *mut c_void, out: *mut i32, data: *const SpawnData, err: *mut i32) {
+    if !data.is_null() && !OURS.with(|o| o.get()) {
+        let bytes: [u8; SPAWN_DATA_SIZE] = unsafe { std::ptr::read(data as *const [u8; SPAWN_DATA_SIZE]) };
+        let by_player = world::player().map(|p| unsafe { (*data).owner == p.chr_ins.field_ins_handle }).unwrap_or(false);
+        let mut t = TEMPLATE.lock().unwrap();
+        if t.is_none() || (by_player && !t.as_ref().unwrap().1) {
+            let hex: Vec<String> = bytes.chunks(16).enumerate().map(|(i, c)| format!("  {:03x}: {}", i * 16, c.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "))).collect();
+            crate::log!("guns: bullet template from the game (bullet {}, player-owned {by_player}):\n{}", unsafe { (*data).bullet_id }, hex.join("\n"));
+            *t = Some((bytes, by_player));
+        }
+    }
+    let orig: FnSpawn = unsafe { std::mem::transmute(SPAWN_ORIGINAL.load(Ordering::Acquire)) };
+    unsafe { orig(mgr, out, data, err) }
+}
+
+/// Watches the game's own bullet spawns for a SpawnData template (called once at boot).
+pub fn install_spawn_hook() {
+    use windows::Win32::System::LibraryLoader::GetModuleHandleW;
+    let Ok(exe) = (unsafe { GetModuleHandleW(None) }) else { return };
+    let target = (exe.0 as usize + SPAWN_BULLET_RVA) as *mut c_void;
+    if let Some(orig) = unsafe { crate::hook::install("SpawnBullet", target, spawn_detour as *mut c_void) } {
+        SPAWN_ORIGINAL.store(orig, Ordering::Release);
+    }
+}
+
 fn spawn(bullet: i64, from: Vec3, dir: Vec3) {
     let (Some(p), Some(mgr)) = (world::player(), world::bullets()) else { return };
-    let mut d: SpawnData = unsafe { std::mem::zeroed() };
+    let Some((template, _)) = *TEMPLATE.lock().unwrap() else {
+        static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+        if !WARNED.swap(true, Ordering::Relaxed) {
+            crate::log!("guns: no bullet template yet (the game has not spawned a bullet of its own); shot skipped");
+        }
+        return;
+    };
+    let mut d: SpawnData = unsafe { std::mem::transmute(template) };
     d.owner = p.chr_ins.field_ins_handle.clone();
     d.target = unsafe { std::mem::transmute([0xFFu8; std::mem::size_of::<eldenring::cs::FieldInsHandle>()]) };
     d.behavior_id = -1;
@@ -129,7 +174,10 @@ fn spawn(bullet: i64, from: Vec3, dir: Vec3) {
     d.acceleration_angle = [dir.x, dir.y, dir.z, 0.0];
     d.position = [from.x, from.y, from.z, 1.0];
     let data = unsafe { &*(&d as *const SpawnData as *const eldenring::cs::BulletSpawnData) };
-    if let Err(e) = mgr.spawn_bullet(data) {
+    OURS.with(|o| o.set(true));
+    let r = mgr.spawn_bullet(data);
+    OURS.with(|o| o.set(false));
+    if let Err(e) = r {
         crate::log!("guns: spawn_bullet {bullet} failed ({e})");
     }
 }

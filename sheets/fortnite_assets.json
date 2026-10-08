@@ -26,168 +26,168 @@
   {
    "id": "mesh_ar",
    "kind": "static_mesh",
-   "query": "/WID_Assault_AutoHigh_Athena_.*_Ore_T0[1-5]$ -> WeaponMeshOverride|PickupStaticMesh",
+   "query": "/Athena/Items/Weapons/WID_Assault_AutoHigh_Athena_R_Ore_T03$ -> WeaponMeshOverride|PickupStaticMesh|PickupSkeletalMesh",
    "out": "static_mesh/mesh_ar.glb",
    "required": true
   },
   {
    "id": "icon_ar",
    "kind": "texture",
-   "query": "/WID_Assault_AutoHigh_Athena_.*T0[1-5]$ -> LargePreviewImage",
+   "query": "/Athena/Items/Weapons/WID_Assault_AutoHigh_Athena_R_Ore_T03$ -> LargeIcon",
    "out": "texture/icon_ar.png",
    "required": true
   },
   {
    "id": "snd_ar_fire",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Assault.*Fire.*",
+   "query": "(?i)/Sounds/Fort_Weapons/AutoRifle/AssaultHeavy/AssaultHeavy_Fire_Close_01$",
    "out": "sound/snd_ar_fire.wav",
    "required": true
   },
   {
    "id": "snd_ar_reload",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Assault.*Reload.*",
+   "query": "(?i)/Sounds/Fort_Weapons/AutoRifle/AssaultHeavy/AssaultHeavy_ReloadStart_02$",
    "out": "sound/snd_ar_reload.wav",
    "required": true
   },
   {
    "id": "mesh_pump",
    "kind": "static_mesh",
-   "query": "/WID_Shotgun_Standard_Athena_.*_Ore_T0[1-5]$ -> WeaponMeshOverride|PickupStaticMesh",
+   "query": "/WID_Shotgun_Standard_Athena_UR_BB$ -> WeaponMeshOverride|PickupStaticMesh|PickupSkeletalMesh",
    "out": "static_mesh/mesh_pump.glb",
    "required": true
   },
   {
    "id": "icon_pump",
    "kind": "texture",
-   "query": "/WID_Shotgun_Standard_Athena_.*T0[1-5]$ -> LargePreviewImage",
+   "query": "/WID_Shotgun_Standard_Athena_UR_BB$ -> LargeIcon",
    "out": "texture/icon_pump.png",
    "required": true
   },
   {
    "id": "snd_pump_fire",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Shotgun.*Fire.*",
+   "query": "(?i)/Sounds/Fort_Weapons/Shotgun/Pump/Shotgun_Pump_NewFire2_01$",
    "out": "sound/snd_pump_fire.wav",
    "required": true
   },
   {
    "id": "snd_pump_reload",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Shotgun.*Reload.*",
+   "query": "(?i)/Sounds/Fort_Weapons/Shotgun/Reload_Elements/Pump_Shotgun_InsertShell_01$",
    "out": "sound/snd_pump_reload.wav",
    "required": true
   },
   {
    "id": "mesh_smg",
    "kind": "static_mesh",
-   "query": "/WID_Pistol_AutoHeavyPDW_Athena_.*_Ore_T0[1-5]$ -> WeaponMeshOverride|PickupStaticMesh",
+   "query": "/Athena/Items/Weapons/WID_Pistol_AutoHeavyPDW_Athena_R_Ore_T03$ -> WeaponMeshOverride|PickupStaticMesh|PickupSkeletalMesh",
    "out": "static_mesh/mesh_smg.glb",
    "required": true
   },
   {
    "id": "icon_smg",
    "kind": "texture",
-   "query": "/WID_Pistol_AutoHeavyPDW_Athena_.*T0[1-5]$ -> LargePreviewImage",
+   "query": "/Athena/Items/Weapons/WID_Pistol_AutoHeavyPDW_Athena_R_Ore_T03$ -> LargeIcon",
    "out": "texture/icon_smg.png",
    "required": true
   },
   {
    "id": "snd_smg_fire",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Pistol.*Fire.*",
+   "query": "(?i)/Sounds/Fort_Weapons/AutoRifle/MilitarySMG/Quartz_Unvault/Military_SMG_Quartz_Fire_Close_01$",
    "out": "sound/snd_smg_fire.wav",
    "required": true
   },
   {
    "id": "snd_smg_reload",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Pistol.*Reload.*",
+   "query": "(?i)/Sounds/Fort_Weapons/pistol/MachinePistol/SoundWaves/Machine_Pistol2_ReloadStart_01$",
    "out": "sound/snd_smg_reload.wav",
    "required": true
   },
   {
    "id": "mesh_sniper",
    "kind": "static_mesh",
-   "query": "/WID_Sniper_BoltAction_Scope_Athena_.*_Ore_T0[1-5]$ -> WeaponMeshOverride|PickupStaticMesh",
+   "query": "/Athena/Items/Weapons/WID_Sniper_BoltAction_Scope_Athena_R_Ore_T03$ -> WeaponMeshOverride|PickupStaticMesh|PickupSkeletalMesh",
    "out": "static_mesh/mesh_sniper.glb",
    "required": true
   },
   {
    "id": "icon_sniper",
    "kind": "texture",
-   "query": "/WID_Sniper_BoltAction_Scope_Athena_.*T0[1-5]$ -> LargePreviewImage",
+   "query": "/Athena/Items/Weapons/WID_Sniper_BoltAction_Scope_Athena_R_Ore_T03$ -> LargeIcon",
    "out": "texture/icon_sniper.png",
    "required": true
   },
   {
    "id": "snd_sniper_fire",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Sniper.*Fire.*",
+   "query": "(?i)/Sounds/Fort_Weapons/SniperRifles/Boltaction_HT/BoltAction_HT_Fire_Close_01$",
    "out": "sound/snd_sniper_fire.wav",
    "required": true
   },
   {
    "id": "snd_sniper_reload",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Sniper.*Reload.*",
+   "query": "(?i)/Sounds/Fort_Weapons/SniperRifles/Boltaction_HT/Boltaction_HT_Reload_End$",
    "out": "sound/snd_sniper_reload.wav",
    "required": true
   },
   {
    "id": "mesh_pistol",
    "kind": "static_mesh",
-   "query": "/WID_Pistol_SemiAuto_Athena_.*_Ore_T0[1-5]$ -> WeaponMeshOverride|PickupStaticMesh",
+   "query": "/Athena/Items/Weapons/WID_Pistol_SemiAuto_Athena_R_Ore_T03$ -> WeaponMeshOverride|PickupStaticMesh|PickupSkeletalMesh",
    "out": "static_mesh/mesh_pistol.glb",
    "required": true
   },
   {
    "id": "icon_pistol",
    "kind": "texture",
-   "query": "/WID_Pistol_SemiAuto_Athena_.*T0[1-5]$ -> LargePreviewImage",
+   "query": "/Athena/Items/Weapons/WID_Pistol_SemiAuto_Athena_R_Ore_T03$ -> LargeIcon",
    "out": "texture/icon_pistol.png",
    "required": true
   },
   {
    "id": "snd_pistol_fire",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Pistol.*Fire.*",
+   "query": "(?i)/Sounds/Fort_Weapons/pistol/Modern/PistolModern_Fire_Close_01$",
    "out": "sound/snd_pistol_fire.wav",
    "required": true
   },
   {
    "id": "snd_pistol_reload",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Pistol.*Reload.*",
+   "query": "(?i)/Sounds/Fort_Weapons/pistol/Modern/PistolModern_ReloadStart_01$",
    "out": "sound/snd_pistol_reload.wav",
    "required": true
   },
   {
    "id": "mesh_rocket",
    "kind": "static_mesh",
-   "query": "/WID_Launcher_Rocket_Athena_.*_Ore_T0[1-5]$ -> WeaponMeshOverride|PickupStaticMesh",
+   "query": "/Athena/Items/Weapons/WID_Launcher_Rocket_Athena_R_Ore_T03$ -> WeaponMeshOverride|PickupStaticMesh|PickupSkeletalMesh",
    "out": "static_mesh/mesh_rocket.glb",
    "required": true
   },
   {
    "id": "icon_rocket",
    "kind": "texture",
-   "query": "/WID_Launcher_Rocket_Athena_.*T0[1-5]$ -> LargePreviewImage",
+   "query": "/Athena/Items/Weapons/WID_Launcher_Rocket_Athena_R_Ore_T03$ -> LargeIcon",
    "out": "texture/icon_rocket.png",
    "required": true
   },
   {
    "id": "snd_rocket_fire",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Launcher.*Fire.*",
+   "query": "(?i)/Sounds/Fort_Weapons/Launchers/RPG/RPG_Fire_Close_01$",
    "out": "sound/snd_rocket_fire.wav",
    "required": true
   },
   {
    "id": "snd_rocket_reload",
    "kind": "sound",
-   "query": "(?i)/Sounds/Weapons/.*Launcher.*Reload.*",
+   "query": "(?i)/Sounds/Fort_Weapons/Launchers/RPG/RPG_Reload_Start_v5$",
    "out": "sound/snd_rocket_reload.wav",
    "required": true
   },
@@ -229,245 +229,245 @@
   {
    "id": "icon_ammo_light",
    "kind": "texture",
-   "query": "(?i)/Items/Ammo/AthenaAmmoDataBulletsLight$ -> LargePreviewImage",
+   "query": "(?i)/Items/Ammo/AthenaAmmoDataBulletsLight$ -> LargeIcon",
    "out": "texture/icon_ammo_light.png",
    "required": true
   },
   {
    "id": "icon_ammo_medium",
    "kind": "texture",
-   "query": "(?i)/Items/Ammo/AthenaAmmoDataBulletsMedium$ -> LargePreviewImage",
+   "query": "(?i)/Items/Ammo/AthenaAmmoDataBulletsMedium$ -> LargeIcon",
    "out": "texture/icon_ammo_medium.png",
    "required": true
   },
   {
    "id": "icon_ammo_heavy",
    "kind": "texture",
-   "query": "(?i)/Items/Ammo/AthenaAmmoDataBulletsHeavy$ -> LargePreviewImage",
+   "query": "(?i)/Items/Ammo/AthenaAmmoDataBulletsHeavy$ -> LargeIcon",
    "out": "texture/icon_ammo_heavy.png",
    "required": true
   },
   {
    "id": "icon_ammo_shells",
    "kind": "texture",
-   "query": "(?i)/Items/Ammo/AthenaAmmoDataShells$ -> LargePreviewImage",
+   "query": "(?i)/Items/Ammo/AthenaAmmoDataShells$ -> LargeIcon",
    "out": "texture/icon_ammo_shells.png",
    "required": true
   },
   {
    "id": "icon_ammo_rockets",
    "kind": "texture",
-   "query": "(?i)/Items/Ammo/AthenaAmmoDataRockets$ -> LargePreviewImage",
+   "query": "(?i)/Items/Ammo/AmmoDataRockets$ -> LargeIcon",
    "out": "texture/icon_ammo_rockets.png",
    "required": true
   },
   {
    "id": "mesh_bandage",
    "kind": "static_mesh",
-   "query": "/Athena_Bandage$ -> PickupStaticMesh",
+   "query": "/Athena/Items/Consumables/Bandage/Athena_Bandage$ -> PickupStaticMesh",
    "out": "static_mesh/mesh_bandage.glb",
    "required": true
   },
   {
    "id": "icon_bandage",
    "kind": "texture",
-   "query": "/Athena_Bandage$ -> LargePreviewImage",
+   "query": "/Athena/Items/Consumables/Bandage/Athena_Bandage$ -> LargeIcon",
    "out": "texture/icon_bandage.png",
    "required": true
   },
   {
    "id": "mesh_medkit",
    "kind": "static_mesh",
-   "query": "/Athena_Medkit$ -> PickupStaticMesh",
+   "query": "/Athena/Items/Consumables/Medkit/Athena_Medkit$ -> PickupStaticMesh",
    "out": "static_mesh/mesh_medkit.glb",
    "required": true
   },
   {
    "id": "icon_medkit",
    "kind": "texture",
-   "query": "/Athena_Medkit$ -> LargePreviewImage",
+   "query": "/Athena/Items/Consumables/Medkit/Athena_Medkit$ -> LargeIcon",
    "out": "texture/icon_medkit.png",
    "required": true
   },
   {
    "id": "mesh_small_shield",
    "kind": "static_mesh",
-   "query": "/Athena_ShieldSmall$ -> PickupStaticMesh",
+   "query": "/Athena/Items/Consumables/ShieldSmall/Athena_ShieldSmall$ -> PickupStaticMesh|PickupSkeletalMesh",
    "out": "static_mesh/mesh_small_shield.glb",
    "required": true
   },
   {
    "id": "icon_small_shield",
    "kind": "texture",
-   "query": "/Athena_ShieldSmall$ -> LargePreviewImage",
+   "query": "/Athena/Items/Consumables/ShieldSmall/Athena_ShieldSmall$ -> LargeIcon",
    "out": "texture/icon_small_shield.png",
    "required": true
   },
   {
    "id": "mesh_shield_potion",
    "kind": "static_mesh",
-   "query": "/Athena_Shields$ -> PickupStaticMesh",
+   "query": "/Athena/Items/Consumables/Shields/Athena_Shields$ -> PickupStaticMesh|PickupSkeletalMesh",
    "out": "static_mesh/mesh_shield_potion.glb",
    "required": true
   },
   {
    "id": "icon_shield_potion",
    "kind": "texture",
-   "query": "/Athena_Shields$ -> LargePreviewImage",
+   "query": "/Athena/Items/Consumables/Shields/Athena_Shields$ -> LargeIcon",
    "out": "texture/icon_shield_potion.png",
    "required": true
   },
   {
    "id": "snd_heal",
    "kind": "sound",
-   "query": "(?i)/Sounds/.*Bandage.*Use.*|.*Heal.*Use.*",
+   "query": "(?i)/Athena/Sounds/Items/Bandages/Bandage_Use$",
    "out": "sound/snd_heal.wav",
    "required": true
   },
   {
    "id": "snd_shield_drink",
    "kind": "sound",
-   "query": "(?i)/Sounds/.*Shield.*Drink.*",
+   "query": "(?i)/Athena/Sounds/Items/Item_Consumables_Shield_Potion_Jar_Use$",
    "out": "sound/snd_shield_drink.wav",
    "required": true
   },
   {
    "id": "icon_wood",
    "kind": "texture",
-   "query": "/Items/ResourcePickups/WoodItemData$ -> LargePreviewImage",
+   "query": "/Items/ResourcePickups/WoodItemData$ -> LargeIcon",
    "out": "texture/icon_wood.png",
    "required": true
   },
   {
    "id": "tex_build_wood",
    "kind": "texture",
-   "query": "(?i)/Building/.*Wood.*_D$",
+   "query": "/Packages/PBW/Wood/Textures/T_PBW_W1_D$",
    "out": "texture/tex_build_wood.png",
    "required": true
   },
   {
    "id": "mesh_wall_wood",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Wood.*Wall.*Solid",
+   "query": "/Packages/PBW/Wood/L1/PBW_W1_Solid$",
    "out": "static_mesh/mesh_wall_wood.glb",
    "required": true
   },
   {
    "id": "mesh_floor_wood",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Wood.*Floor.*Solid",
+   "query": "/Packages/PBW/Wood/L1/PBW_W1_Floor$",
    "out": "static_mesh/mesh_floor_wood.glb",
    "required": true
   },
   {
    "id": "mesh_ramp_wood",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Wood.*Stair.*Solid",
+   "query": "/Packages/PBW/Wood/L1/PBW_W1_StairW$",
    "out": "static_mesh/mesh_ramp_wood.glb",
    "required": true
   },
   {
    "id": "icon_stone",
    "kind": "texture",
-   "query": "/Items/ResourcePickups/StoneItemData$ -> LargePreviewImage",
+   "query": "/Items/ResourcePickups/StoneItemData$ -> LargeIcon",
    "out": "texture/icon_stone.png",
    "required": true
   },
   {
    "id": "tex_build_stone",
    "kind": "texture",
-   "query": "(?i)/Building/.*Stone.*_D$",
+   "query": "/Packages/PBW/Brick/Textures/T_Brick_L1A_D$",
    "out": "texture/tex_build_stone.png",
    "required": true
   },
   {
    "id": "mesh_wall_stone",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Stone.*Wall.*Solid",
+   "query": "/Packages/PBW/Brick/L1/PBW_B1_Solid$",
    "out": "static_mesh/mesh_wall_stone.glb",
    "required": true
   },
   {
    "id": "mesh_floor_stone",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Stone.*Floor.*Solid",
+   "query": "/Packages/PBW/Brick/L1/PBW_B1_Floor$",
    "out": "static_mesh/mesh_floor_stone.glb",
    "required": true
   },
   {
    "id": "mesh_ramp_stone",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Stone.*Stair.*Solid",
+   "query": "/Packages/PBW/Brick/L1/PBW_B1_StairW$",
    "out": "static_mesh/mesh_ramp_stone.glb",
    "required": true
   },
   {
    "id": "icon_metal",
    "kind": "texture",
-   "query": "/Items/ResourcePickups/MetalItemData$ -> LargePreviewImage",
+   "query": "/Items/ResourcePickups/MetalItemData$ -> LargeIcon",
    "out": "texture/icon_metal.png",
    "required": true
   },
   {
    "id": "tex_build_metal",
    "kind": "texture",
-   "query": "(?i)/Building/.*Metal.*_D$",
+   "query": "/Packages/PBW/Metal/Textures/T_PBW_M2_D$",
    "out": "texture/tex_build_metal.png",
    "required": true
   },
   {
    "id": "mesh_wall_metal",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Metal.*Wall.*Solid",
+   "query": "/Packages/PBW/Metal/L1/PBW_M1_Solid$",
    "out": "static_mesh/mesh_wall_metal.glb",
    "required": true
   },
   {
    "id": "mesh_floor_metal",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Metal.*Floor.*Solid",
+   "query": "/Packages/PBW/Metal/L1/PBW_M1_Floor$",
    "out": "static_mesh/mesh_floor_metal.glb",
    "required": true
   },
   {
    "id": "mesh_ramp_metal",
    "kind": "static_mesh",
-   "query": "(?i)/Building/.*PBW?_Metal.*Stair.*Solid",
+   "query": "/Packages/PBW/Metal/L1/PBW_M1_StairW$",
    "out": "static_mesh/mesh_ramp_metal.glb",
    "required": true
   },
   {
    "id": "mesh_chest",
-   "kind": "skeletal_mesh",
-   "query": "(?i)/Tiered_Chest_Athena$ -> Mesh",
-   "out": "skeletal_mesh/mesh_chest.glb",
+   "kind": "static_mesh",
+   "query": "/Gadgets/Assets/Chest_Mark_III/Meshes/Chest_Mark_III$",
+   "out": "static_mesh/mesh_chest.glb",
    "required": true
   },
   {
    "id": "snd_chest_open",
    "kind": "sound",
-   "query": "(?i)/Sounds/.*Chest.*Open.*",
+   "query": "(?i)/Sounds/Foley_Loot/Containers/Treasure_Chest/treasure_chest_open_latch_01$",
    "out": "sound/snd_chest_open.wav",
    "required": true
   },
   {
    "id": "snd_chest_hum",
    "kind": "sound",
-   "query": "(?i)/Sounds/.*Chest.*(Loop|Hum|Idle).*",
+   "query": "(?i)/Sounds/Foley_Loot/Containers/Treasure_Chest/Treasure_Chest_Ambient_Loop_01$",
    "out": "sound/snd_chest_hum.wav",
    "required": true
   },
   {
    "id": "mesh_ammo_box",
    "kind": "static_mesh",
-   "query": "(?i)/Tiered_Ammo_Athena$ -> Mesh",
+   "query": "/Gadgets/Assets/Ammo_Box_Mark_III/Meshes/Ammo_Box_Mark_III$",
    "out": "static_mesh/mesh_ammo_box.glb",
    "required": true
   },
   {
    "id": "snd_ammo_box_open",
    "kind": "sound",
-   "query": "(?i)/Sounds/.*Ammo.*Box.*Open.*",
+   "query": "(?i)/Sounds/Foley_Loot/Containers/Treasure_Chest/Treasure_Chest_Search_Start_01$",
    "out": "sound/snd_ammo_box_open.wav",
    "required": true
   },
@@ -481,14 +481,14 @@
   {
    "id": "ui_health_bar",
    "kind": "texture",
-   "query": "(?i)/UI/.*HUD.*Health.*Bar",
+   "query": "(?i)/Athena/HUD/Art/icon_health$",
    "out": "texture/ui_health_bar.png",
    "required": false
   },
   {
    "id": "ui_shield_bar",
    "kind": "texture",
-   "query": "(?i)/UI/.*HUD.*Shield.*Bar",
+   "query": "(?i)/Athena/HUD/Art/icon_shield$",
    "out": "texture/ui_shield_bar.png",
    "required": false
   },
@@ -502,7 +502,7 @@
   {
    "id": "ui_build_slots",
    "kind": "texture",
-   "query": "(?i)/UI/.*Build.*(Wall|Floor|Stair).*Icon",
+   "query": "(?i)/UI/Fort_Quickbar/Icon_Building_(Wall|Floor|Stair)$",
    "out": "texture/ui_build_slots.png",
    "required": false
   },
@@ -516,7 +516,7 @@
   {
    "id": "ui_hitmarker",
    "kind": "texture",
-   "query": "(?i)/UI/.*Hit.?Marker",
+   "query": "(?i)/Athena/HUD/reticles/Weapons/AthenaHUD_HitMarker$",
    "out": "texture/ui_hitmarker.png",
    "required": false
   },
@@ -530,217 +530,217 @@
   {
    "id": "font_burbank",
    "kind": "font",
-   "query": "(?i)/UI/Foundation/Fonts/BurbankBigCondensed-Black",
+   "query": "(?i)/FortUILibrary/Content/Fonts/BurbankBigCondensed-Black$",
    "out": "font/font_burbank.ttf",
    "required": true
   },
   {
    "id": "anim_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Idle/NoWep_Stand_Idle_Loop$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_idle.psa",
    "required": true
   },
   {
    "id": "anim_jog",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Jog_Fwd.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jog/NoWeapon/M_Jog_NoWep_N$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_jog.psa",
    "required": true
   },
   {
    "id": "anim_sprint",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Sprint_Fwd.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Sprint/Sprint_Default$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_sprint.psa",
    "required": true
   },
   {
    "id": "anim_jump",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Jump_Start.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jump/NoWep/JumpUp_NoWep_CMM_Additive$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_jump.psa",
    "required": true
   },
   {
    "id": "anim_fall",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Fall_Loop.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jump/NoWep/JumpFall_NoWep_CMM_Additive$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_fall.psa",
    "required": true
   },
   {
    "id": "anim_land",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Land.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jump/NoWep/JumpLand_NoWep_CMM_Additive$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_land.psa",
    "required": true
   },
   {
    "id": "anim_crouch_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Crouch_Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Poses/Medium/Male/StaminaHawaii/Stamina_Hawaii_Crouch_Idle_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_crouch_idle.psa",
    "required": true
   },
   {
    "id": "anim_crouch_walk",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Crouch_Walk_Fwd.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Crouch/NoWeapon/Crouch_NoWeapon_N_NoAdditive$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_crouch_walk.psa",
    "required": true
   },
   {
    "id": "anim_pickaxe_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Pickaxe.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/.*/PandaSpeak_Add_Pickaxe_IdlePose_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_pickaxe_idle.psa",
    "required": true
   },
   {
    "id": "anim_pickaxe_swing",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Pickaxe.*(Swing|Attack).*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing1_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_pickaxe_swing.psa",
    "required": true
   },
   {
    "id": "anim_rifle_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Rifle.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Idle/(.*/)?AssaultRifle_Idle_Patrol$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_rifle_idle.psa",
    "required": true
   },
   {
    "id": "anim_rifle_fire",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Rifle.*Fire.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/AssaultRifle/AssaultRifle_Fire_CH5$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_rifle_fire.psa",
    "required": true
   },
   {
    "id": "anim_rifle_reload",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Rifle.*Reload.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/AssaultRifle/AssaultRifle_FCBA_Reload_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_rifle_reload.psa",
    "required": true
   },
   {
    "id": "anim_rifle_ads",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Rifle.*(ADS|Aim).*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Idle/Idle_Noise_AR_Downsights$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_rifle_ads.psa",
    "required": true
   },
   {
    "id": "anim_shotgun_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Shotgun.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Walk/Patrol/PumpShotgun_Paprika/PaprikaPumpShotgun_Idle_Patrol$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_shotgun_idle.psa",
    "required": true
   },
   {
    "id": "anim_shotgun_fire",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Shotgun.*Fire.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/Shotgun/Shotgun_Rifle_PABF_Fire_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_shotgun_fire.psa",
    "required": true
   },
   {
    "id": "anim_shotgun_reload",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Shotgun.*Reload.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/Shotgun/Shotgun_Rifle_PABF_Reload_Loop_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_shotgun_reload.psa",
    "required": true
   },
   {
    "id": "anim_pistol_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Pistol.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Idle/(.*/)?Pistol_Idle_Patrol$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_pistol_idle.psa",
    "required": true
   },
   {
    "id": "anim_pistol_fire",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Pistol.*Fire.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/pistol/Pistol_FC_SA_Fire_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_pistol_fire.psa",
    "required": true
   },
   {
    "id": "anim_pistol_reload",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Pistol.*Reload.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/pistol/Pistol_FC_SA_Reload_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_pistol_reload.psa",
    "required": true
   },
   {
    "id": "anim_pistol_ads",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Pistol.*(ADS|Aim).*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/CowboyPistol/CowboyPistol_DownSights_Fire_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_pistol_ads.psa",
    "required": true
   },
   {
    "id": "anim_launcher_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Rocket.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Idle/(.*/)?GrenadeLauncher_Idle_Patrol_Pose$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_launcher_idle.psa",
    "required": true
   },
   {
    "id": "anim_launcher_fire",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Rocket.*Fire.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/Launcher/Launcher_Fire$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_launcher_fire.psa",
    "required": true
   },
   {
    "id": "anim_launcher_reload",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Rocket.*Reload.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Guns/Launcher/Launcher_Reload_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_launcher_reload.psa",
    "required": true
   },
   {
    "id": "anim_bandage",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Bandage.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Reacts/Healing/Bandages/WrapBandages_Athena_Into$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_bandage.psa",
    "required": true
   },
   {
    "id": "anim_drink",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*(Drink|Shield.*Potion).*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Reacts/Healing/Drinking_30f$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_drink.psa",
    "required": true
   },
   {
    "id": "anim_build",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*Build.*Place.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Building/Blueprint_Equip$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_build.psa",
    "required": true
   },
   {
    "id": "anim_sit",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/.*(Vehicle|Passenger).*Sit.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
+   "query": "(?i)/Animation/Game/MainPlayer/Vehicles/ATV/ATV_Passenger_Idle$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_sit.psa",
    "required": true
   },
   {
    "id": "snd_pickaxe_swing",
    "kind": "sound",
-   "query": "(?i)/Sounds/.*Pickaxe.*Swing.*",
+   "query": "(?i)/Athena/Sounds/Weapons/PickAxes/MarkIIIMale/Pickaxe_MarkIIIMale_Swing_01$",
    "out": "sound/snd_pickaxe_swing.wav",
    "required": false
   },
   {
    "id": "snd_harvest_hit",
    "kind": "sound",
-   "query": "(?i)/Sounds/.*(Harvest|Pickaxe).*Impact.*",
+   "query": "(?i)/Athena/Sounds/Weapons/PickAxe_CQC_Impact_01$",
    "out": "sound/snd_harvest_hit.wav",
    "required": false
   }

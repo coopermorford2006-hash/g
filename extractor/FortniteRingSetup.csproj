@@ -17,4 +17,8 @@
     <PackageReference Include="CUE4Parse" Version="1.2.2.202610" />
     <PackageReference Include="CUE4Parse-Conversion" Version="1.2.2.202610" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- ACL animation decompression for CUE4Parse; built by tools/build_natives.ps1 (not on NuGet) -->
+    <None Include="natives\CUE4Parse-Natives.dll" Link="CUE4Parse-Natives.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
