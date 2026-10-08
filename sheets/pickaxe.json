@@ -1,0 +1,8 @@
+{
+  "sheet": "pickaxe",
+  "about": "The harvesting tool (Fortnite's pickaxe). It harvests materials (harvestables) and also hits enemies, scaled by region tier like the guns.",
+  "columns": {"id": "key", "damage": "Fortnite damage per swing", "swing_s": "seconds between swings", "reach_m": "how far it reaches", "fn_mesh": "@fortnite_assets row", "fn_swing_sound": "@fortnite_assets row", "fn_hit_sound": "@fortnite_assets row", "anim_set": "@animations row"},
+  "rows": [
+    {"id": "default", "damage": 20, "swing_s": 0.6, "reach_m": 2.2, "fn_mesh": "@fortnite_assets:pickaxe", "fn_swing_sound": "@fortnite_assets:snd_pickaxe_swing", "fn_hit_sound": "@fortnite_assets:snd_harvest_hit", "anim_set": "@animations:pickaxe"}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "sheet": "camera",
+  "about": "Fortnite's over-the-shoulder third-person camera, written into Elden Ring's ChrCam each frame after the game's camera update.",
+  "columns": {"id": "key", "value": "number or [x,y,z]", "what": "meaning"},
+  "rows": [
+    {"id": "fov", "value": 80, "what": "hip-fire horizontal FOV in degrees (Fortnite default)"},
+    {"id": "boom_length_m", "value": 2.6, "what": "distance behind the character"},
+    {"id": "shoulder_offset_m", "value": [0.65, 0.0, 0.55], "what": "right, forward, up offset of the pivot from the head"},
+    {"id": "ads_boom_length_m", "value": 1.3, "what": "distance while aiming"},
+    {"id": "ads_blend_s", "value": 0.15, "what": "time to blend into aim"},
+    {"id": "pitch_min_deg", "value": -80, "what": "lowest look angle"},
+    {"id": "pitch_max_deg", "value": 80, "what": "highest look angle"},
+    {"id": "mouse_sens", "value": 0.08, "what": "degrees per mouse count at 1.0 sensitivity"},
+    {"id": "collision_radius_m", "value": 0.2, "what": "camera probe radius against walls"}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "sheet": "loot_tables",
+  "about": "What a container roll gives. Each roll picks one entry by weight; a weapon also gets a rarity from region_tiers.rarity_weights and its own ammo (one mag's worth).",
+  "columns": {"id": "key", "entries": "list of [@ref, weight, count]; count 0 = per-row default (ammo.chest_drop)"},
+  "rows": [
+    {"id": "chest", "entries": [
+      ["@weapons:ar", 18, 1], ["@weapons:pump", 16, 1], ["@weapons:smg", 14, 1], ["@weapons:sniper", 6, 1], ["@weapons:pistol", 12, 1], ["@weapons:rocket", 3, 1],
+      ["@consumables:bandage", 8, 5], ["@consumables:medkit", 4, 1], ["@consumables:small_shield", 8, 3], ["@consumables:shield_potion", 5, 1],
+      ["@materials:wood", 6, 30], ["@materials:stone", 4, 30], ["@materials:metal", 3, 30]]},
+    {"id": "ammo_box", "entries": [["@ammo:light", 30, 0], ["@ammo:medium", 30, 0], ["@ammo:heavy", 12, 0], ["@ammo:shells", 20, 0], ["@ammo:rockets", 4, 0]]}
+  ]
+}

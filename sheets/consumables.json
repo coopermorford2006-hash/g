@@ -1,0 +1,11 @@
+{
+  "sheet": "consumables",
+  "about": "Healing and shields. Fortnite numbers on Fortnite's 100 HP / 100 shield scale; the DLL maps 100 HP to the Tarnished's max HP (see systems:health_shield).",
+  "columns": {"id": "key", "name": "display name", "restores": "health | shield", "amount": "points restored", "cap": "won't heal above this", "use_s": "use time seconds", "stack": "max per slot", "fn_mesh": "@fortnite_assets row", "fn_icon": "@fortnite_assets row", "fn_use_sound": "@fortnite_assets row"},
+  "rows": [
+    {"id": "bandage", "name": "Bandages", "restores": "health", "amount": 15, "cap": 75, "use_s": 3.5, "stack": 15, "fn_mesh": "@fortnite_assets:mesh_bandage", "fn_icon": "@fortnite_assets:icon_bandage", "fn_use_sound": "@fortnite_assets:snd_heal"},
+    {"id": "medkit", "name": "Med Kit", "restores": "health", "amount": 100, "cap": 100, "use_s": 10.0, "stack": 3, "fn_mesh": "@fortnite_assets:mesh_medkit", "fn_icon": "@fortnite_assets:icon_medkit", "fn_use_sound": "@fortnite_assets:snd_heal"},
+    {"id": "small_shield", "name": "Small Shield Potion", "restores": "shield", "amount": 25, "cap": 50, "use_s": 2.0, "stack": 6, "fn_mesh": "@fortnite_assets:mesh_small_shield", "fn_icon": "@fortnite_assets:icon_small_shield", "fn_use_sound": "@fortnite_assets:snd_shield_drink"},
+    {"id": "shield_potion", "name": "Shield Potion", "restores": "shield", "amount": 50, "cap": 100, "use_s": 5.0, "stack": 3, "fn_mesh": "@fortnite_assets:mesh_shield_potion", "fn_icon": "@fortnite_assets:icon_shield_potion", "fn_use_sound": "@fortnite_assets:snd_shield_drink"}
+  ]
+}

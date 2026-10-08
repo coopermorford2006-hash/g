@@ -1,0 +1,22 @@
+{
+  "sheet": "hud",
+  "about": "The Fortnite HUD, drawn by the DLL with ImGui over Elden Ring's frame (Elden Ring's own HUD is hidden). Positions are fractions of the screen (0-1) from the top-left, sized for 16:9, matching Fortnite's Chapter 5+ layout. Textures and font come from the player's Fortnite install via fortnite_assets.",
+  "columns": {"id": "key", "pos": "[x, y] anchor, screen fraction", "size": "[w, h] screen fraction", "source": "what it shows", "art": "@fortnite_assets row (or none)", "visible": "always | combat | build | when_relevant"},
+  "rows": [
+    {"id": "health_bar", "pos": [0.035, 0.885], "size": [0.2, 0.018], "source": "health 0-100 (Elden Ring HP scaled)", "art": "@fortnite_assets:ui_health_bar", "visible": "always"},
+    {"id": "shield_bar", "pos": [0.035, 0.86], "size": [0.2, 0.018], "source": "shield 0-100", "art": "@fortnite_assets:ui_shield_bar", "visible": "always"},
+    {"id": "hotbar", "pos": [0.62, 0.86], "size": [0.33, 0.09], "source": "pickaxe + 5 weapon slots, rarity backgrounds, selected slot", "art": "@fortnite_assets:ui_slot_frame", "visible": "combat"},
+    {"id": "ammo_counter", "pos": [0.62, 0.825], "size": [0.12, 0.03], "source": "mag / reserve of held gun", "art": "none", "visible": "combat"},
+    {"id": "materials", "pos": [0.9, 0.62], "size": [0.08, 0.16], "source": "wood, stone, metal counts", "art": "@fortnite_assets:icon_wood", "visible": "always"},
+    {"id": "build_bar", "pos": [0.62, 0.86], "size": [0.33, 0.09], "source": "wall / floor / ramp slots and their cost", "art": "@fortnite_assets:ui_build_slots", "visible": "build"},
+    {"id": "crosshair", "pos": [0.5, 0.5], "size": [0.03, 0.053], "source": "per-class reticle with live bloom", "art": "@fortnite_assets:ui_reticles", "visible": "combat"},
+    {"id": "hit_marker", "pos": [0.5, 0.5], "size": [0.03, 0.053], "source": "hit/headshot marker on hit", "art": "@fortnite_assets:ui_hitmarker", "visible": "when_relevant"},
+    {"id": "damage_numbers", "pos": [0.5, 0.5], "size": [0.0, 0.0], "source": "floating damage numbers at the hit point (white body, yellow head, blue shield)", "art": "none", "visible": "when_relevant"},
+    {"id": "pickup_prompt", "pos": [0.5, 0.62], "size": [0.2, 0.06], "source": "E Search / E Pick up name + rarity", "art": "none", "visible": "when_relevant"},
+    {"id": "consumable_slot", "pos": [0.535, 0.86], "size": [0.07, 0.09], "source": "selected heal item and count; Crimson flask count", "art": "none", "visible": "combat"},
+    {"id": "runes", "pos": [0.88, 0.95], "size": [0.1, 0.03], "source": "Elden Ring runes held (as Fortnite gold bars style counter)", "art": "@fortnite_assets:icon_gold", "visible": "always"},
+    {"id": "boss_bar", "pos": [0.25, 0.08], "size": [0.5, 0.02], "source": "boss name and HP from Elden Ring's boss bar data, restyled", "art": "none", "visible": "when_relevant"},
+    {"id": "use_progress", "pos": [0.5, 0.58], "size": [0.12, 0.012], "source": "heal/shield use timer, reload timer, chest search", "art": "none", "visible": "when_relevant"}
+  ],
+  "font": {"id": "burbank", "art": "@fortnite_assets:font_burbank"}
+}

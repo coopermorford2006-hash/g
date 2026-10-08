@@ -1,0 +1,158 @@
+{
+ "sheet": "region_tiers",
+ "about": "How loot scales through the Lands Between so Fortnite guns keep up with Elden Ring's enemies. A gun's Elden Ring damage = weapons.damage[rarity] x damage_mult of the tier it was found in. Tier is picked from the Site of Grace map area (ER map id prefix m10..m61) the chest is in. rarity_weights = [common, uncommon, rare, epic, legendary] for chest weapon rolls.",
+ "columns": {
+  "id": "key",
+  "name": "where",
+  "map_areas": "map ids in this tier: mAA or mAA_BB (legacy dungeons/underground), or m60_X0-X1_Z0-Z1 (open-world tile ranges); first match wins",
+  "damage_mult": "gun damage multiplier",
+  "rarity_weights": "5 weights",
+  "enemy_hp_hint": "typical field-enemy HP there (design note, for balance)"
+ },
+ "rows": [
+  {
+   "id": "t1",
+   "name": "Limgrave, Weeping Peninsula, Stormveil",
+   "map_areas": [
+    "m10",
+    "m18",
+    "m30_00",
+    "m31_00",
+    "m31_03",
+    "m31_15",
+    "m31_17",
+    "m31_18",
+    "m60_40-46_32-41"
+   ],
+   "damage_mult": 1.0,
+   "rarity_weights": [
+    50,
+    30,
+    15,
+    4,
+    1
+   ],
+   "enemy_hp_hint": 150
+  },
+  {
+   "id": "t2",
+   "name": "Liurnia, Raya Lucaria, Caelid",
+   "map_areas": [
+    "m14",
+    "m30_02",
+    "m31_09",
+    "m60_33-39_38-48",
+    "m60_47-52_35-42"
+   ],
+   "damage_mult": 1.8,
+   "rarity_weights": [
+    30,
+    35,
+    25,
+    8,
+    2
+   ],
+   "enemy_hp_hint": 400
+  },
+  {
+   "id": "t3",
+   "name": "Altus Plateau, Leyndell, Siofra, Ainsel",
+   "map_areas": [
+    "m11",
+    "m12_01",
+    "m12_02",
+    "m60_36-43_48-54"
+   ],
+   "damage_mult": 2.8,
+   "rarity_weights": [
+    15,
+    30,
+    35,
+    15,
+    5
+   ],
+   "enemy_hp_hint": 800
+  },
+  {
+   "id": "t4",
+   "name": "Mountaintops, Consecrated Snowfield, Volcano Manor, Deeproot",
+   "map_areas": [
+    "m16",
+    "m12_03",
+    "m60_47-54_50-58",
+    "m60_44-46_55-58"
+   ],
+   "damage_mult": 4.0,
+   "rarity_weights": [
+    5,
+    20,
+    40,
+    25,
+    10
+   ],
+   "enemy_hp_hint": 1500
+  },
+  {
+   "id": "t5",
+   "name": "Farum Azula, Haligtree, Leyndell Ashen, Mohgwyn",
+   "map_areas": [
+    "m13",
+    "m15",
+    "m12_05",
+    "m11_05",
+    "m60_44-46_39-43"
+   ],
+   "damage_mult": 5.5,
+   "rarity_weights": [
+    0,
+    10,
+    35,
+    35,
+    20
+   ],
+   "enemy_hp_hint": 2500
+  },
+  {
+   "id": "t6",
+   "name": "Land of Shadow (DLC)",
+   "map_areas": [
+    "m20",
+    "m21",
+    "m22",
+    "m25",
+    "m28",
+    "m61"
+   ],
+   "damage_mult": 7.0,
+   "rarity_weights": [
+    0,
+    5,
+    30,
+    40,
+    25
+   ],
+   "enemy_hp_hint": 4000
+  }
+ ],
+ "_unverified_note": "Open-world tile ranges are rough until the boot/region log on the user's PC records the tile at known places (Church of Elleh, Raya Lucaria, Leyndell gate...).",
+ "_unverified": {
+  "t1": [
+   "map_areas"
+  ],
+  "t2": [
+   "map_areas"
+  ],
+  "t3": [
+   "map_areas"
+  ],
+  "t4": [
+   "map_areas"
+  ],
+  "t5": [
+   "map_areas"
+  ],
+  "t6": [
+   "map_areas"
+  ]
+ }
+}

@@ -1,0 +1,10 @@
+{
+  "sheet": "materials",
+  "about": "Fortnite building materials. HP values are Fortnite's max wall HP per material; build_s is how long a piece takes to reach full HP.",
+  "columns": {"id": "key", "name": "display name", "max": "carry cap", "piece_cost": "cost per build piece", "wall_hp": "max HP of a wall", "floor_hp": "max HP of a floor", "ramp_hp": "max HP of a ramp", "start_hp_frac": "HP fraction when placed", "build_s": "seconds to reach full HP", "fn_icon": "@fortnite_assets row", "fn_material_tex": "@fortnite_assets row: build-piece texture set"},
+  "rows": [
+    {"id": "wood", "name": "Wood", "max": 999, "piece_cost": 10, "wall_hp": 150, "floor_hp": 140, "ramp_hp": 140, "start_hp_frac": 0.6, "build_s": 5.0, "fn_icon": "@fortnite_assets:icon_wood", "fn_material_tex": "@fortnite_assets:tex_build_wood"},
+    {"id": "stone", "name": "Stone", "max": 999, "piece_cost": 10, "wall_hp": 300, "floor_hp": 280, "ramp_hp": 280, "start_hp_frac": 0.25, "build_s": 12.0, "fn_icon": "@fortnite_assets:icon_stone", "fn_material_tex": "@fortnite_assets:tex_build_stone"},
+    {"id": "metal", "name": "Metal", "max": 999, "piece_cost": 10, "wall_hp": 500, "floor_hp": 460, "ramp_hp": 460, "start_hp_frac": 0.2, "build_s": 20.0, "fn_icon": "@fortnite_assets:icon_metal", "fn_material_tex": "@fortnite_assets:tex_build_metal"}
+  ]
+}

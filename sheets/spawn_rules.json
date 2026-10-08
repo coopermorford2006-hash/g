@@ -1,0 +1,42 @@
+{
+ "sheet": "spawn_rules",
+ "about": "Where containers appear. Anchors are every Site of Grace in the game (BonfireWarpParam rows hold each grace's map tile and position), so placement covers the whole game, DLC included, without a hand-made list. Each container is keyed by grace id + index so it stays searched in the mod's save sidecar.",
+ "columns": {
+  "id": "key",
+  "anchor": "what a container is placed next to: grace",
+  "count": "containers per anchor",
+  "chance": "chance each one exists (deterministic per anchor+index)",
+  "offset_m": "distance from the anchor",
+  "min_spacing_m": "no two containers closer than this",
+  "respawn": "never | on_rest (resting at grace refills)"
+ },
+ "rows": [
+  {
+   "id": "chest_rule",
+   "anchor": "grace",
+   "count": 3,
+   "chance": 0.8,
+   "offset_m": 14,
+   "min_spacing_m": 10,
+   "respawn": "never"
+  },
+  {
+   "id": "ammo_rule",
+   "anchor": "grace",
+   "count": 2,
+   "chance": 0.6,
+   "offset_m": 6,
+   "min_spacing_m": 5,
+   "respawn": "on_rest"
+  }
+ ],
+ "_unverified": {
+  "chest_rule": [
+   "offset_m"
+  ],
+  "ammo_rule": [
+   "offset_m"
+  ]
+ },
+ "_unverified_note": "Grace positions are block-local; the chest is dropped onto the ground with a ray cast once its tile is loaded. Offsets need a look in game (not inside walls / off cliffs)."
+}

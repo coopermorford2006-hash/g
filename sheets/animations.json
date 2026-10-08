@@ -1,0 +1,16 @@
+{
+  "sheet": "animations",
+  "about": "Animation sets for the Fortnite outfit, played by the DLL's own skinned-mesh renderer on Fortnite's skeleton. Each row is one animation group; clips are @fortnite_assets rows.",
+  "columns": {"id": "key", "used_for": "which states use it", "clips": "map of state -> @fortnite_assets row"},
+  "rows": [
+    {"id": "locomotion", "used_for": "idle, run, sprint, jump, fall, land, crouch", "clips": {"idle": "@fortnite_assets:anim_idle", "run": "@fortnite_assets:anim_jog", "sprint": "@fortnite_assets:anim_sprint", "jump": "@fortnite_assets:anim_jump", "fall": "@fortnite_assets:anim_fall", "land": "@fortnite_assets:anim_land", "crouch_idle": "@fortnite_assets:anim_crouch_idle", "crouch_walk": "@fortnite_assets:anim_crouch_walk"}},
+    {"id": "pickaxe", "used_for": "harvesting tool held and swing", "clips": {"idle": "@fortnite_assets:anim_pickaxe_idle", "swing": "@fortnite_assets:anim_pickaxe_swing"}},
+    {"id": "rifle", "used_for": "AR, SMG, sniper", "clips": {"idle": "@fortnite_assets:anim_rifle_idle", "fire": "@fortnite_assets:anim_rifle_fire", "reload": "@fortnite_assets:anim_rifle_reload", "ads": "@fortnite_assets:anim_rifle_ads"}},
+    {"id": "shotgun", "used_for": "pump", "clips": {"idle": "@fortnite_assets:anim_shotgun_idle", "fire": "@fortnite_assets:anim_shotgun_fire", "reload": "@fortnite_assets:anim_shotgun_reload", "ads": "@fortnite_assets:anim_rifle_ads"}},
+    {"id": "pistol", "used_for": "pistol", "clips": {"idle": "@fortnite_assets:anim_pistol_idle", "fire": "@fortnite_assets:anim_pistol_fire", "reload": "@fortnite_assets:anim_pistol_reload", "ads": "@fortnite_assets:anim_pistol_ads"}},
+    {"id": "launcher", "used_for": "rocket launcher", "clips": {"idle": "@fortnite_assets:anim_launcher_idle", "fire": "@fortnite_assets:anim_launcher_fire", "reload": "@fortnite_assets:anim_launcher_reload", "ads": "@fortnite_assets:anim_rifle_ads"}},
+    {"id": "consume", "used_for": "bandage, medkit, shields", "clips": {"bandage": "@fortnite_assets:anim_bandage", "drink": "@fortnite_assets:anim_drink"}},
+    {"id": "build", "used_for": "placing a piece", "clips": {"place": "@fortnite_assets:anim_build"}},
+    {"id": "riding", "used_for": "sitting on Torrent (Elden Ring drives)", "clips": {"sit": "@fortnite_assets:anim_sit"}}
+  ]
+}

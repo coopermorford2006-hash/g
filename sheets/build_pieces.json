@@ -1,0 +1,88 @@
+{
+ "sheet": "build_pieces",
+ "about": "Fortnite build pieces on Fortnite's grid (a tile is 5.12 m square, a storey 3.84 m tall). The DLL draws the Fortnite mesh and owns their collision: the Fortnite movement controller, camera and your bullets/rockets/pickaxe treat each piece as an oriented box. Pieces are stored in block-local coordinates with their map tile, so Havok re-basing never moves them. Enemy collision (spawning an Elden Ring asset) waits for a way to remove spawned assets: fromsoftware-rs has spawn but no despawn, and a destroyed wall must not leave collision behind.",
+ "columns": {
+  "id": "key",
+  "name": "display name",
+  "key": "@controls row that selects it",
+  "hp_column": "materials column holding its HP",
+  "size_m": "[x, y, z] extent in metres",
+  "pitch_deg": "tilt of the collision box (ramp: atan(3.84/5.12) = 36.87)",
+  "pivot": "placement rule: wall_edge | floor_cell | ramp_cell",
+  "collision_asset": "Elden Ring asset spawned so enemies collide with it, or none (0.1: none, see about)",
+  "collision_base_size_m": "[x,y,z] native size of that asset, for scaling ([0,0,0] when none)",
+  "fn_mesh_wood": "@fortnite_assets row",
+  "fn_mesh_stone": "@fortnite_assets row",
+  "fn_mesh_metal": "@fortnite_assets row"
+ },
+ "rows": [
+  {
+   "id": "wall",
+   "name": "Wall",
+   "key": "@controls:build_wall",
+   "hp_column": "wall_hp",
+   "size_m": [
+    5.12,
+    0.2,
+    3.84
+   ],
+   "pivot": "wall_edge",
+   "collision_asset": "none",
+   "collision_base_size_m": [
+    0,
+    0,
+    0
+   ],
+   "fn_mesh_wood": "@fortnite_assets:mesh_wall_wood",
+   "fn_mesh_stone": "@fortnite_assets:mesh_wall_stone",
+   "fn_mesh_metal": "@fortnite_assets:mesh_wall_metal",
+   "pitch_deg": 0
+  },
+  {
+   "id": "floor",
+   "name": "Floor",
+   "key": "@controls:build_floor",
+   "hp_column": "floor_hp",
+   "size_m": [
+    5.12,
+    5.12,
+    0.2
+   ],
+   "pivot": "floor_cell",
+   "collision_asset": "none",
+   "collision_base_size_m": [
+    0,
+    0,
+    0
+   ],
+   "fn_mesh_wood": "@fortnite_assets:mesh_floor_wood",
+   "fn_mesh_stone": "@fortnite_assets:mesh_floor_stone",
+   "fn_mesh_metal": "@fortnite_assets:mesh_floor_metal",
+   "pitch_deg": 0
+  },
+  {
+   "id": "ramp",
+   "name": "Ramp",
+   "key": "@controls:build_ramp",
+   "hp_column": "ramp_hp",
+   "size_m": [
+    5.12,
+    6.4,
+    0.2
+   ],
+   "pivot": "ramp_cell",
+   "collision_asset": "none",
+   "collision_base_size_m": [
+    0,
+    0,
+    0
+   ],
+   "fn_mesh_wood": "@fortnite_assets:mesh_ramp_wood",
+   "fn_mesh_stone": "@fortnite_assets:mesh_ramp_stone",
+   "fn_mesh_metal": "@fortnite_assets:mesh_ramp_metal",
+   "pitch_deg": 36.87
+  }
+ ],
+ "_unverified": {},
+ "_unverified_note": "Ramp collision is a 6.4 m slab (the slope length of a 5.12 x 3.84 cell) tilted 36.87 degrees."
+}

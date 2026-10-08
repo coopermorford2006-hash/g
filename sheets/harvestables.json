@@ -1,0 +1,14 @@
+{
+  "sheet": "harvestables",
+  "about": "What the pickaxe harvests. The DLL ray-casts the swing against the map; the hit asset's name (AEG id) picks the row by prefix. Fortnite yields per hit; hitting the weak point (critical) doubles it.",
+  "columns": {"id": "key", "matches": "AEG name prefixes or map-collision material that count", "material": "@materials row", "per_hit": "material per swing", "crit_per_hit": "material per weak-point swing", "hits_to_break": "swings before it stops yielding (0 = endless, used for terrain)", "respawn_s": "seconds before it yields again"},
+  "rows": [
+    {"id": "trees", "matches": ["AEG463", "AEG801", "AEG802", "AEG803"], "material": "@materials:wood", "per_hit": 7, "crit_per_hit": 14, "hits_to_break": 10, "respawn_s": 600},
+    {"id": "wooden_props", "matches": ["AEG001", "AEG002", "AEG003"], "material": "@materials:wood", "per_hit": 5, "crit_per_hit": 10, "hits_to_break": 4, "respawn_s": 600},
+    {"id": "rocks", "matches": ["AEG220", "AEG221", "AEG222", "material:rock"], "material": "@materials:stone", "per_hit": 6, "crit_per_hit": 12, "hits_to_break": 12, "respawn_s": 600},
+    {"id": "ruins", "matches": ["AEG030", "AEG031", "material:stone_brick"], "material": "@materials:stone", "per_hit": 5, "crit_per_hit": 10, "hits_to_break": 0, "respawn_s": 0},
+    {"id": "metal_props", "matches": ["AEG027", "AEG099_6", "material:metal"], "material": "@materials:metal", "per_hit": 4, "crit_per_hit": 8, "hits_to_break": 8, "respawn_s": 600}
+  ],
+  "_unverified": {"trees": ["matches"], "wooden_props": ["matches"], "rocks": ["matches"], "ruins": ["matches"], "metal_props": ["matches"]},
+  "_unverified_note": "AEG prefixes are guesses until the DLL's harvest log lists what the pickaxe actually hits in Limgrave on the user's PC."
+}

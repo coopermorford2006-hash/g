@@ -1,0 +1,7 @@
+target/
+bin/
+obj/
+dist/
+cache/
+*.log
+generated_preflight.txt

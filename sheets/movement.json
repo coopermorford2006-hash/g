@@ -1,0 +1,28 @@
+{
+  "sheet": "movement",
+  "about": "The Fortnite movement controller. The DLL moves the Tarnished kinematically (Havok ray casts against Elden Ring's collision, as in the CS2 conversion) and turns the game's own gravity off while it drives. Speeds are in metres per second. Values are tuned to match Fortnite (Chapter 5+ movement); each needs a side-by-side feel check in the user's game.",
+  "columns": {"id": "key", "value": "number", "unit": "unit", "what": "meaning"},
+  "rows": [
+    {"id": "run_speed", "value": 4.05, "unit": "m/s", "what": "default forward speed (Fortnite runs by default)"},
+    {"id": "sprint_speed", "value": 5.6, "unit": "m/s", "what": "speed while sprint is held"},
+    {"id": "crouch_speed", "value": 2.6, "unit": "m/s", "what": "crouch walk speed"},
+    {"id": "ads_speed_mult", "value": 0.65, "unit": "x", "what": "movement multiplier while aiming"},
+    {"id": "backpedal_mult", "value": 0.85, "unit": "x", "what": "multiplier moving backwards"},
+    {"id": "accel", "value": 30.0, "unit": "m/s2", "what": "ground acceleration"},
+    {"id": "air_control", "value": 0.35, "unit": "x", "what": "fraction of ground acceleration in the air"},
+    {"id": "jump_velocity", "value": 5.6, "unit": "m/s", "what": "upward speed at take-off"},
+    {"id": "gravity", "value": 15.7, "unit": "m/s2", "what": "falling acceleration (Fortnite's floaty-then-fast arc)"},
+    {"id": "terminal_velocity", "value": 40.0, "unit": "m/s", "what": "max fall speed"},
+    {"id": "step_height", "value": 0.45, "unit": "m", "what": "max ledge walked up without jumping"},
+    {"id": "max_slope_deg", "value": 50.0, "unit": "deg", "what": "steepest walkable slope"},
+    {"id": "capsule_radius", "value": 0.38, "unit": "m", "what": "collision radius"},
+    {"id": "capsule_height", "value": 1.8, "unit": "m", "what": "collision height"},
+    {"id": "fall_damage_start", "value": 11.5, "unit": "m", "what": "fall height before damage (about three Fortnite storeys)"},
+    {"id": "fall_damage_per_m", "value": 4.0, "unit": "hp/m", "what": "Fortnite HP lost per metre above the threshold"},
+    {"id": "fall_death", "value": 40.0, "unit": "m", "what": "fall height that always kills"},
+    {"id": "slide_speed", "value": 7.5, "unit": "m/s", "what": "(0.2) slide entry speed"},
+    {"id": "mantle_height", "value": 2.2, "unit": "m", "what": "(0.2) highest ledge mantled"}
+  ],
+  "_unverified": {"run_speed": ["value"], "sprint_speed": ["value"], "crouch_speed": ["value"], "jump_velocity": ["value"], "gravity": ["value"], "accel": ["value"], "air_control": ["value"]},
+  "_unverified_note": "Fortnite's exact constants are compiled into the game; these are matched by feel and must be checked against Fortnite on the user's PC (side-by-side clip timing: run 20 m, jump apex, fall time)."
+}

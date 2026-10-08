@@ -1,0 +1,373 @@
+{
+ "sheet": "systems",
+ "about": "Every Elden Ring system the mashup touches, and how. One row = one hook/module in the DLL (fortring/src/systems/<id>.rs). er_api names the fromsoftware-rs type or the Windows API used.",
+ "columns": {
+  "id": "key",
+  "what": "what it does for the player",
+  "er_api": "engine object / API it reads or writes",
+  "when": "game task group or hook point",
+  "depends": "list of @systems rows",
+  "sheets": "sheets it reads",
+  "release": "version"
+ },
+ "rows": [
+  {
+   "id": "boot",
+   "what": "waits until the game window and reflection singletons exist, then starts everything",
+   "er_api": "CSTaskImp::wait_for_instance, window visible",
+   "when": "DLL thread at load",
+   "depends": [
+    "none"
+   ],
+   "sheets": [
+    "none"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "safety",
+   "what": "refuses to run unless launched offline through ModEngine2 (no EAC module in process)",
+   "er_api": "GetModuleHandleW(EasyAntiCheat), command line",
+   "when": "DllMain",
+   "depends": [
+    "none"
+   ],
+   "sheets": [
+    "none"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "save_redirect",
+   "what": "keeps a separate save (ER0000.fnring.sl2) so the normal save never gets mod items",
+   "er_api": "CreateFileW hook on *.sl2 / *.sl2.bak",
+   "when": "DllMain (before the game opens saves)",
+   "depends": [
+    "@systems:safety"
+   ],
+   "sheets": [
+    "none"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "assets",
+   "what": "loads the Fortnite cache made by the setup tool; shows a clear message if it is missing",
+   "er_api": "file IO in {localappdata}/FortniteRing/cache",
+   "when": "boot",
+   "depends": [
+    "@systems:boot"
+   ],
+   "sheets": [
+    "fortnite_assets"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "input",
+   "what": "reads keyboard/mouse, hides the mod's keys from Elden Ring, presses Elden Ring keys for passthrough actions",
+   "er_api": "IDirectInputDevice8::GetDeviceState hook",
+   "when": "game input poll",
+   "depends": [
+    "@systems:boot"
+   ],
+   "sheets": [
+    "controls"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "er_ui_state",
+   "what": "knows when an Elden Ring menu, map, dialogue or cutscene is open, and hands control back",
+   "er_api": "CSMenuManImp.ui_states, CSFeManImp",
+   "when": "every frame",
+   "depends": [
+    "@systems:boot"
+   ],
+   "sheets": [
+    "none"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "hide_er_hud",
+   "what": "hides Elden Ring's HP/FP/stamina bars and quick slots (menus stay)",
+   "er_api": "CSFeManImp HUD visibility flags",
+   "when": "every frame",
+   "depends": [
+    "@systems:er_ui_state"
+   ],
+   "sheets": [
+    "hud"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "camera",
+   "what": "Fortnite over-the-shoulder camera with ADS",
+   "er_api": "CSCamera / ChrCam pers_cam matrix",
+   "when": "after game camera update",
+   "depends": [
+    "@systems:input",
+    "@systems:er_ui_state"
+   ],
+   "sheets": [
+    "camera"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "movement",
+   "what": "Fortnite movement controller (run, sprint, jump, crouch, fall damage); game gravity off while it drives",
+   "er_api": "CSChrPhysicsModule position/gravity_multiplier/gravity_disabled, CSHavokMan::cast_ray",
+   "when": "ChrIns_PostPhysics",
+   "depends": [
+    "@systems:input",
+    "@systems:camera"
+   ],
+   "sheets": [
+    "movement"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "health_shield",
+   "what": "Fortnite 100 HP + 100 shield: HP shown as % of Elden Ring HP; shield absorbs damage first",
+   "er_api": "ChrIns data module hp/max_hp, compare per tick",
+   "when": "ChrIns_PostPhysics",
+   "depends": [
+    "@systems:boot"
+   ],
+   "sheets": [
+    "consumables"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "inventory",
+   "what": "pickaxe + 5 weapon slots, ammo, materials, consumables; saved next to the Elden Ring save",
+   "er_api": "own JSON sidecar keyed by save slot",
+   "when": "on change / on Elden Ring save",
+   "depends": [
+    "@systems:save_redirect"
+   ],
+   "sheets": [
+    "weapons",
+    "ammo",
+    "materials",
+    "consumables"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "guns",
+   "what": "fire, spread/bloom, recoil, reload, ADS; damage via real Elden Ring bullets so enemies react, die and drop runes",
+   "er_api": "CSBulletManager::spawn_bullet, a repurposed BulletParam + AtkParam_Pc row, SpEffect attack-rate row set per held gun",
+   "when": "ChrIns_PostPhysics",
+   "depends": [
+    "@systems:input",
+    "@systems:inventory",
+    "@systems:camera"
+   ],
+   "sheets": [
+    "weapons",
+    "rarities",
+    "region_tiers"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "consumables_use",
+   "what": "use bandages/medkits/shield potions with Fortnite timings",
+   "er_api": "ChrIns hp write",
+   "when": "ChrIns_PostPhysics",
+   "depends": [
+    "@systems:health_shield",
+    "@systems:inventory"
+   ],
+   "sheets": [
+    "consumables"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "containers",
+   "what": "chests and ammo boxes across the map; E to search; loot pops out",
+   "er_api": "MsbRepository (anchors), CSActionButtonManImp prompt, own world-space draw",
+   "when": "ChrIns_PostPhysics",
+   "depends": [
+    "@systems:inventory",
+    "@systems:renderer"
+   ],
+   "sheets": [
+    "containers",
+    "spawn_rules",
+    "loot_tables",
+    "region_tiers"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "pickups",
+   "what": "dropped loot floats on the ground with rarity glow; E to pick up, swap if full",
+   "er_api": "own world-space draw",
+   "when": "ChrIns_PostPhysics",
+   "depends": [
+    "@systems:inventory",
+    "@systems:renderer"
+   ],
+   "sheets": [
+    "rarities"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "harvest",
+   "what": "pickaxe swings ray-cast the world and give wood/stone/metal",
+   "er_api": "CSHavokMan::cast_ray hit asset name, CSWorldGeomMan",
+   "when": "ChrIns_PostPhysics",
+   "depends": [
+    "@systems:input",
+    "@systems:inventory"
+   ],
+   "sheets": [
+    "harvestables",
+    "materials"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "building",
+   "what": "grid build preview, place wall/floor/ramp; HP builds up; you can stand on, climb and take cover behind them; your bullets, rockets and pickaxe damage them. (0.1: enemies pass through builds, see build_pieces.about)",
+   "er_api": "own oriented-box collision in world::ray, own mesh draw",
+   "when": "ChrIns_PostPhysics",
+   "depends": [
+    "@systems:input",
+    "@systems:inventory",
+    "@systems:renderer"
+   ],
+   "sheets": [
+    "build_pieces",
+    "materials"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "renderer",
+   "what": "draws Fortnite meshes (outfit, guns, chests, builds, pickups) in the world with depth occlusion",
+   "er_api": "D3D12 hook via hudhook pre-ImGui pass, scene depth copy",
+   "when": "present",
+   "depends": [
+    "@systems:assets"
+   ],
+   "sheets": [
+    "fortnite_assets",
+    "animations"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "player_model",
+   "what": "hides the Tarnished and draws the Fortnite outfit with Fortnite animations at its position",
+   "er_api": "ChrIns model visibility flag, PlayerIns position/orientation",
+   "when": "present",
+   "depends": [
+    "@systems:renderer",
+    "@systems:movement"
+   ],
+   "sheets": [
+    "animations"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "hud",
+   "what": "the Fortnite HUD",
+   "er_api": "ImGui via hudhook",
+   "when": "present",
+   "depends": [
+    "@systems:assets",
+    "@systems:er_ui_state"
+   ],
+   "sheets": [
+    "hud"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "audio",
+   "what": "plays Fortnite sounds (guns, chest hum, heals) with distance falloff",
+   "er_api": "XAudio2 (own voice, separate from Wwise)",
+   "when": "event",
+   "depends": [
+    "@systems:assets"
+   ],
+   "sheets": [
+    "fortnite_assets"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "death",
+   "what": "on death: Fortnite-style eliminated screen, then Elden Ring's own respawn at grace; inventory kept",
+   "er_api": "FeTextEffectParam rows 5/50 blanked (no YOU DIED)",
+   "when": "on HP 0",
+   "depends": [
+    "@systems:health_shield"
+   ],
+   "sheets": [
+    "hud"
+   ],
+   "release": "0.1"
+  },
+  {
+   "id": "log",
+   "what": "writes FortniteRing.log for testing (boot, hits, chest rolls, harvest hits, build spawns)",
+   "er_api": "file",
+   "when": "always",
+   "depends": [
+    "none"
+   ],
+   "sheets": [
+    "none"
+   ],
+   "release": "0.1"
+  }
+ ],
+ "_unverified": {
+  "hide_er_hud": [
+   "er_api"
+  ],
+  "health_shield": [
+   "er_api"
+  ],
+  "guns": [
+   "er_api"
+  ],
+  "containers": [
+   "er_api"
+  ],
+  "harvest": [
+   "er_api"
+  ],
+  "building": [
+   "er_api"
+  ],
+  "player_model": [
+   "er_api"
+  ],
+  "save_redirect": [
+   "er_api"
+  ],
+  "camera": [
+   "er_api"
+  ],
+  "movement": [
+   "er_api"
+  ],
+  "renderer": [
+   "er_api"
+  ]
+ },
+ "_unverified_note": "Each er_api is taken from fromsoftware-rs and the CS2 conversion field note; each must be seen working in the user's Elden Ring (2.7.1.0) before it counts as verified."
+}

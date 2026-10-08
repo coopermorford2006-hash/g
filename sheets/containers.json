@@ -1,0 +1,9 @@
+{
+  "sheet": "containers",
+  "about": "Fortnite loot containers placed in the Elden Ring world.",
+  "columns": {"id": "key", "name": "prompt text", "loot": "@loot_tables row", "open_s": "hold-to-search time", "rolls": "number of loot rolls", "glow": "glow colour when unopened", "hum_radius_m": "distance at which the chest hum plays", "placement": "@spawn_rules row", "fn_mesh": "@fortnite_assets row", "fn_open_sound": "@fortnite_assets row", "fn_hum_sound": "@fortnite_assets row", "release": "first version that has it"},
+  "rows": [
+    {"id": "chest", "name": "Search Chest", "loot": "@loot_tables:chest", "open_s": 0.25, "rolls": 3, "glow": "#FFD34D", "hum_radius_m": 12, "placement": "@spawn_rules:chest_rule", "fn_mesh": "@fortnite_assets:mesh_chest", "fn_open_sound": "@fortnite_assets:snd_chest_open", "fn_hum_sound": "@fortnite_assets:snd_chest_hum", "release": "0.1"},
+    {"id": "ammo_box", "name": "Search Ammo Box", "loot": "@loot_tables:ammo_box", "open_s": 0.25, "rolls": 2, "glow": "#7AD1FF", "hum_radius_m": 0, "placement": "@spawn_rules:ammo_rule", "fn_mesh": "@fortnite_assets:mesh_ammo_box", "fn_open_sound": "@fortnite_assets:snd_ammo_box_open", "fn_hum_sound": "@fortnite_assets:snd_none", "release": "0.1"}
+  ]
+}

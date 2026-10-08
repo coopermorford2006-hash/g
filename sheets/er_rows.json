@@ -1,0 +1,14 @@
+{
+  "sheet": "er_rows",
+  "about": "Elden Ring param rows the DLL takes over in memory (nothing is written to the game's files). On boot it picks the first candidate row that exists, overwrites the listed fields, and logs the row's old values so the choice can be checked in the user's game.",
+  "columns": {"id": "key", "param": "SoloParam name in fromsoftware-rs", "candidates": "row ids to try, in order", "sets": "fields the DLL overwrites", "why": "what it is for"},
+  "rows": [
+    {"id": "gun_bullet", "param": "Bullet", "candidates": [1700, 1700000, 10170000], "sets": ["atkId_Bullet", "life", "initVellocity", "maxVellocity", "hitRadius", "gravityInRange", "sfxId_Bullet", "sfxId_Hit"], "why": "the projectile every Fortnite gun and the pickaxe spawns; speed/life set per shot"},
+    {"id": "gun_atk", "param": "AtkParam_Pc", "candidates": [1700, 1700000, 10170000], "sets": ["atkPhys", "atkPhysCorrection", "hit0_Radius"], "why": "damage of gun_bullet; atkPhys set to the held gun's damage before each shot"},
+    {"id": "rocket_blast_bullet", "param": "Bullet", "candidates": [1701, 1700001, 10170001], "sets": ["atkId_Bullet", "life", "hitRadius", "sfxId_Bullet"], "why": "the rocket's explosion (spawned at the impact point)"},
+    {"id": "rocket_blast_atk", "param": "AtkParam_Pc", "candidates": [1701, 1700001, 10170001], "sets": ["atkPhys", "hit0_Radius"], "why": "rocket explosion damage and radius"},
+    {"id": "you_died_banner", "param": "FeTextEffectParam", "candidates": [5, 50], "sets": ["resId", "textId", "seId"], "why": "blank YOU DIED (CS2 conversion note, verified there on 2.7.1.0) so the Fortnite eliminated screen shows instead"}
+  ],
+  "_unverified": {"gun_bullet": ["candidates"], "gun_atk": ["candidates"], "rocket_blast_bullet": ["candidates"], "rocket_blast_atk": ["candidates"]},
+  "_unverified_note": "Candidate ids are guesses from the Throwing Dagger family; the boot log lists the rows found and their old values for the first test on the user's PC."
+}

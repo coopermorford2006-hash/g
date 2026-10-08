@@ -1,0 +1,12 @@
+{
+  "sheet": "ammo",
+  "about": "Fortnite ammo types. Stack caps are Fortnite's inventory caps; chest_drop is how much one ammo box/chest roll gives.",
+  "columns": {"id": "key", "name": "display name", "max": "carry cap", "chest_drop": "amount per chest roll", "box_drop": "amount from an ammo box", "fn_icon": "@fortnite_assets row"},
+  "rows": [
+    {"id": "light", "name": "Light Bullets", "max": 999, "chest_drop": 18, "box_drop": 18, "fn_icon": "@fortnite_assets:icon_ammo_light"},
+    {"id": "medium", "name": "Medium Bullets", "max": 999, "chest_drop": 10, "box_drop": 10, "fn_icon": "@fortnite_assets:icon_ammo_medium"},
+    {"id": "heavy", "name": "Heavy Bullets", "max": 999, "chest_drop": 6, "box_drop": 6, "fn_icon": "@fortnite_assets:icon_ammo_heavy"},
+    {"id": "shells", "name": "Shells", "max": 999, "chest_drop": 5, "box_drop": 5, "fn_icon": "@fortnite_assets:icon_ammo_shells"},
+    {"id": "rockets", "name": "Rockets", "max": 999, "chest_drop": 3, "box_drop": 2, "fn_icon": "@fortnite_assets:icon_ammo_rockets"}
+  ]
+}

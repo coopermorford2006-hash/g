@@ -1,0 +1,16 @@
+{
+  "sheet": "rarities",
+  "about": "Fortnite's five loot rarities. Colours are Fortnite's HUD rarity colours.",
+  "columns": {
+    "id": "key", "name": "display name", "index": "0-4, index into weapons.damage/reload_s",
+    "color": "HUD hex colour", "glow": "pickup/chest glow hex colour",
+    "fn_slot_bg": "@fortnite_assets row for the hotbar slot background of this rarity"
+  },
+  "rows": [
+    {"id": "common", "name": "Common", "index": 0, "color": "#B1B1B1", "glow": "#C8C8C8", "fn_slot_bg": "@fortnite_assets:ui_rarity_common"},
+    {"id": "uncommon", "name": "Uncommon", "index": 1, "color": "#5BFD00", "glow": "#69BB1E", "fn_slot_bg": "@fortnite_assets:ui_rarity_uncommon"},
+    {"id": "rare", "name": "Rare", "index": 2, "color": "#00FFF6", "glow": "#2CC1FF", "fn_slot_bg": "@fortnite_assets:ui_rarity_rare"},
+    {"id": "epic", "name": "Epic", "index": 3, "color": "#D505FF", "glow": "#B238FF", "fn_slot_bg": "@fortnite_assets:ui_rarity_epic"},
+    {"id": "legendary", "name": "Legendary", "index": 4, "color": "#F68B20", "glow": "#E9A23C", "fn_slot_bg": "@fortnite_assets:ui_rarity_legendary"}
+  ]
+}

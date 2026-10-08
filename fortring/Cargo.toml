@@ -1,0 +1,32 @@
+[package]
+name = "fortring"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Fortnite Ring: Fortnite's player, guns, chests and building in Elden Ring (ModEngine2 DLL)"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+eldenring = { git = "https://github.com/vswarte/fromsoftware-rs", rev = "59fbd3b3b7daaf14aca47c9f73530493dba6bc79" }
+fromsoftware-shared = { git = "https://github.com/vswarte/fromsoftware-rs", rev = "59fbd3b3b7daaf14aca47c9f73530493dba6bc79" }
+hudhook = { git = "https://github.com/veeenu/hudhook", rev = "72e1cc062c35df847b703e5507b82eb21d80d82c", default-features = false, features = ["dx12"] }
+glam = "0.30"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+png = "0.17"
+
+[dependencies.windows]
+version = "0.61"
+features = [
+  "Win32_Foundation", "Win32_System_LibraryLoader", "Win32_System_SystemServices", "Win32_Storage_FileSystem",
+  "Win32_Security", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging", "Win32_System_Threading",
+  "Win32_Media_Audio", "Win32_Media_Audio_XAudio2", "Win32_System_Com", "Win32_Graphics_Direct3D12", "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D_Fxc", "Win32_System_Memory", "Win32_Devices_HumanInterfaceDevice", "Win32_System_Performance",
+]
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+panic = "abort"
