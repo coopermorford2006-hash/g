@@ -95,8 +95,27 @@ def main():
                 used.add(m.group(2))
     orphans = sorted(ids.get("fortnite_assets", set()) - used - {"outfit", "pickaxe"})
 
+    # every column must be read by code (or be declared documentation in the sheet's _doc_columns)
+    code = ""
+    for f in list((ROOT / "fortring/src").glob("*.rs")) + list((ROOT / "extractor").glob("*.cs")):
+        if f.name not in ("generated.rs", "Generated.cs"):
+            code += f.read_text()
+    unused = []
+    for name, d in sheets.items():
+        doc = set(d.get("_doc_columns", [])) | {"id"}
+        const_sheet = list(d["columns"])[:2] == ["id", "value"]
+        for c in d["columns"]:
+            if c in doc:
+                continue
+            if const_sheet:
+                for r in d["rows"]:
+                    if f"{name.upper()}_{r['id'].upper()}_V" not in code:
+                        unused.append(f"{name}:{r['id']} (constant never read)")
+                break
+            if not re.search(rf"\.{c}\b", code) and not (name == "fortnite_assets"):
+                unused.append(f"{name}.{c}")
     print(f"sheets: {len(sheets)}  rows: {sum(len(d['rows']) for d in sheets.values())}  cells: {total_cells}")
-    for title, items in (("UNFILLED", unfilled), ("BROKEN REFERENCES", broken), ("DUPLICATE IDS", dupes),
+    for title, items in (("COLUMNS NO CODE READS", unused), ("UNFILLED", unfilled), ("BROKEN REFERENCES", broken), ("DUPLICATE IDS", dupes),
                          ("UNUSED FORTNITE ASSETS", orphans)):
         print(f"\n{title}: {len(items)}")
         for i in items:
@@ -107,7 +126,7 @@ def main():
         by_sheet.setdefault(u.split(":")[0], []).append(u)
     for s, us in by_sheet.items():
         print(f"  {s}: {len(us)}  e.g. {us[0]}")
-    clean = not (unfilled or broken or dupes or orphans)
+    clean = not (unfilled or broken or dupes or orphans or unused)
     print("\nPREFLIGHT", "CLEAN (build allowed)" if clean else "FAILED (fix before building)")
     return 0 if clean else 1
 

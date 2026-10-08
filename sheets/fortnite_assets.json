@@ -1,6 +1,6 @@
 {
  "sheet": "fortnite_assets",
- "about": "Every piece of Fortnite content the mashup uses. Nothing here ships with the mod: the setup tool finds each row in the player's own Fortnite install (query = regex over package paths, '-> Prop' = follow that property), exports it to {localappdata}/FortniteRing/cache/<out>, and logs the path it matched. kind decides the export format (glTF binary for meshes/animations, PNG, WAV, TTF).",
+ "about": "Every piece of Fortnite content the mashup uses. Nothing here ships with the mod: the setup tool finds each row in the player's own Fortnite install (query = regex over package paths, '-> Prop' = follow that property; 'outfit:' / 'pickaxe:' resolve a cosmetic by id), exports it to {localappdata}/FortniteRing/cache/<out>, and logs the path it matched in cache/manifest.json. kind decides the export format: glTF binary for meshes (an outfit with several parts writes outfit.glb, outfit_1.glb, ...), ActorX .psa for animations, PNG, WAV, TTF.",
  "columns": {
   "id": "key",
   "kind": "skeletal_mesh | static_mesh | anim | texture | sound | font",
@@ -538,196 +538,196 @@
    "id": "anim_idle",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_idle.glb",
+   "out": "anim/anim_idle.psa",
    "required": true
   },
   {
    "id": "anim_jog",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Jog_Fwd.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_jog.glb",
+   "out": "anim/anim_jog.psa",
    "required": true
   },
   {
    "id": "anim_sprint",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Sprint_Fwd.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_sprint.glb",
+   "out": "anim/anim_sprint.psa",
    "required": true
   },
   {
    "id": "anim_jump",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Jump_Start.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_jump.glb",
+   "out": "anim/anim_jump.psa",
    "required": true
   },
   {
    "id": "anim_fall",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Fall_Loop.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_fall.glb",
+   "out": "anim/anim_fall.psa",
    "required": true
   },
   {
    "id": "anim_land",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Land.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_land.glb",
+   "out": "anim/anim_land.psa",
    "required": true
   },
   {
    "id": "anim_crouch_idle",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Crouch_Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_crouch_idle.glb",
+   "out": "anim/anim_crouch_idle.psa",
    "required": true
   },
   {
    "id": "anim_crouch_walk",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Crouch_Walk_Fwd.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_crouch_walk.glb",
+   "out": "anim/anim_crouch_walk.psa",
    "required": true
   },
   {
    "id": "anim_pickaxe_idle",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Pickaxe.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_pickaxe_idle.glb",
+   "out": "anim/anim_pickaxe_idle.psa",
    "required": true
   },
   {
    "id": "anim_pickaxe_swing",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Pickaxe.*(Swing|Attack).*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_pickaxe_swing.glb",
+   "out": "anim/anim_pickaxe_swing.psa",
    "required": true
   },
   {
    "id": "anim_rifle_idle",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Rifle.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_rifle_idle.glb",
+   "out": "anim/anim_rifle_idle.psa",
    "required": true
   },
   {
    "id": "anim_rifle_fire",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Rifle.*Fire.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_rifle_fire.glb",
+   "out": "anim/anim_rifle_fire.psa",
    "required": true
   },
   {
    "id": "anim_rifle_reload",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Rifle.*Reload.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_rifle_reload.glb",
+   "out": "anim/anim_rifle_reload.psa",
    "required": true
   },
   {
    "id": "anim_rifle_ads",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Rifle.*(ADS|Aim).*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_rifle_ads.glb",
+   "out": "anim/anim_rifle_ads.psa",
    "required": true
   },
   {
    "id": "anim_shotgun_idle",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Shotgun.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_shotgun_idle.glb",
+   "out": "anim/anim_shotgun_idle.psa",
    "required": true
   },
   {
    "id": "anim_shotgun_fire",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Shotgun.*Fire.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_shotgun_fire.glb",
+   "out": "anim/anim_shotgun_fire.psa",
    "required": true
   },
   {
    "id": "anim_shotgun_reload",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Shotgun.*Reload.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_shotgun_reload.glb",
+   "out": "anim/anim_shotgun_reload.psa",
    "required": true
   },
   {
    "id": "anim_pistol_idle",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Pistol.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_pistol_idle.glb",
+   "out": "anim/anim_pistol_idle.psa",
    "required": true
   },
   {
    "id": "anim_pistol_fire",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Pistol.*Fire.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_pistol_fire.glb",
+   "out": "anim/anim_pistol_fire.psa",
    "required": true
   },
   {
    "id": "anim_pistol_reload",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Pistol.*Reload.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_pistol_reload.glb",
+   "out": "anim/anim_pistol_reload.psa",
    "required": true
   },
   {
    "id": "anim_pistol_ads",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Pistol.*(ADS|Aim).*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_pistol_ads.glb",
+   "out": "anim/anim_pistol_ads.psa",
    "required": true
   },
   {
    "id": "anim_launcher_idle",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Rocket.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_launcher_idle.glb",
+   "out": "anim/anim_launcher_idle.psa",
    "required": true
   },
   {
    "id": "anim_launcher_fire",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Rocket.*Fire.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_launcher_fire.glb",
+   "out": "anim/anim_launcher_fire.psa",
    "required": true
   },
   {
    "id": "anim_launcher_reload",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Rocket.*Reload.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_launcher_reload.glb",
+   "out": "anim/anim_launcher_reload.psa",
    "required": true
   },
   {
    "id": "anim_bandage",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Bandage.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_bandage.glb",
+   "out": "anim/anim_bandage.psa",
    "required": true
   },
   {
    "id": "anim_drink",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*(Drink|Shield.*Potion).*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_drink.glb",
+   "out": "anim/anim_drink.psa",
    "required": true
   },
   {
    "id": "anim_build",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*Build.*Place.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_build.glb",
+   "out": "anim/anim_build.psa",
    "required": true
   },
   {
    "id": "anim_sit",
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/.*(Vehicle|Passenger).*Sit.*Idle.*\\.uasset$  (AnimSequence on the Fortnite player skeleton)",
-   "out": "anim/anim_sit.glb",
+   "out": "anim/anim_sit.psa",
    "required": true
   },
   {
