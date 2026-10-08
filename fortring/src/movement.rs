@@ -39,6 +39,7 @@ pub fn release() {
         let phys = &mut p.chr_ins.modules.physics;
         phys.gravity_multiplier = b.saved_gravity;
         phys.gravity_disabled = false;
+        p.chr_ins.modules.fall.disable_fall_motion = false;
     }
     crate::log!("movement: released to Elden Ring");
 }
@@ -47,6 +48,13 @@ pub fn release() {
 pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
     let Some(p) = world::player() else { return 0.0 };
     let mut b = BODY.lock().unwrap();
+    // with its gravity off, Elden Ring believes the character is airborne: it plays the falling pose
+    // (the "floating" look) and its fall timer runs until it plays a fall death. Keep it grounded; the
+    // controller applies Fortnite fall damage itself.
+    let air_time = p.chr_ins.modules.fall.fall_timer;
+    p.chr_ins.modules.fall.fall_timer = 0.0;
+    p.chr_ins.modules.fall.disable_fall_motion = true;
+    p.chr_ins.modules.material.disable_fall_damage = true;
     let phys = &mut p.chr_ins.modules.physics;
     if !b.driving {
         b.driving = true;
@@ -156,7 +164,7 @@ pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
         *last = Some(std::time::Instant::now());
         let below = world::map_ray(pos + Vec3::Y * 0.5, pos - Vec3::Y * 20.0).map(|g| pos.y - g.y);
         crate::log!(
-            "movement: pos {pos:.2} grounded {} vel.y {:.2} speed {:.2} ground below {below:?} (map only)",
+            "movement: pos {pos:.2} grounded {} vel.y {:.2} speed {:.2} ground below {below:?} (map only), ER fall timer was {air_time:.2}",
             b.grounded, b.vel.y, Vec3::new(b.vel.x, 0.0, b.vel.z).length()
         );
     }
