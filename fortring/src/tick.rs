@@ -110,11 +110,10 @@ pub fn gameplay() {
         let shift = origin - prev;
         if shift.length() > 1.0 && shift.length() < 2000.0 {
             let mv = |a: &mut [f32; 3]| { a[0] += shift.x; a[1] += shift.y; a[2] += shift.z; };
-            st.saved.builds.iter_mut().for_each(|b| mv(&mut b.pos));
             st.pickups.iter_mut().for_each(|q| mv(&mut q.pos));
             st.damage_numbers.iter_mut().for_each(|d| mv(&mut d.0));
             st.tracers.iter_mut().for_each(|t| { mv(&mut t.0); mv(&mut t.1); });
-            crate::log!("world: Havok origin moved {shift:.1}; {} builds and {} pickups follow", st.saved.builds.len(), st.pickups.len());
+            crate::log!("world: Havok origin moved {shift:.1}; {} pickups follow", st.pickups.len());
         }
     }
     fr.havok_origin = Some(origin);
@@ -175,7 +174,6 @@ pub fn gameplay() {
     camera::look(&mut st, inp.dx, inp.dy);
     let fall = movement::step(&mut st, &inp, dt);
     health::tick(&mut st, &inp, dt, fall);
-    building::refresh(&st);
 
     let feet = v(&p.chr_ins.modules.physics.position);
     let mut head = feet + Vec3::Y * MOVEMENT_CAPSULE_HEIGHT_V * if st.crouched { 0.7 } else { 0.95 };
@@ -195,6 +193,7 @@ pub fn gameplay() {
     fr.cam_lag_y *= (-14.0 * dt).exp();
     head.y += fr.cam_lag_y;
     let (cam_pos, cam_fwd, fov) = camera::pose(&st, head);
+    building::refresh(&mut st, cam_pos, cam_fwd);
     fr.cam = Some((cam_pos, cam_fwd, fov));
     fr.body = Some((feet, st.yaw));
     fr.view = fr.cam;

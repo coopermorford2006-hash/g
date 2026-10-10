@@ -98,6 +98,8 @@ pub struct State {
     pub damage_numbers: Vec<([f32; 3], f32, f32, u8)>,
     /// Shot tracers drawn by the HUD: (from, to, seconds left).
     pub tracers: Vec<([f32; 3], [f32; 3], f32)>,
+    /// Build pieces to draw this frame (game thread -> HUD): piece, material, Havok centre, yaw, is preview.
+    pub build_draw: Vec<(usize, usize, [f32; 3], f32, bool)>,
     pub eliminated: f32,
     pub message: Option<(String, f32)>,
     pub slot: u32,
@@ -139,6 +141,7 @@ impl State {
             progress: None,
             damage_numbers: Vec::new(),
             tracers: Vec::new(),
+            build_draw: Vec::new(),
             eliminated: 0.0,
             message: None,
             slot: 0,

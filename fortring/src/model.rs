@@ -305,6 +305,8 @@ pub struct ScreenTri {
     pub p: [[f32; 2]; 3],
     pub uv: [[f32; 2]; 3],
     pub shade: u8,
+    /// Drawn as a translucent placement preview.
+    pub ghost: bool,
 }
 
 pub struct View {
@@ -336,6 +338,17 @@ impl View {
     }
 }
 
+/// Screen-space winding of front faces after pose()'s Z mirror (+1 or -1).
+const FRONT_SIGN: f32 = -1.0;
+
+fn front_sign() -> f32 {
+    #[cfg(test)]
+    if let Ok(v) = std::env::var("FORTRING_PREVIEW_CULL") {
+        return v.parse().unwrap_or(FRONT_SIGN);
+    }
+    FRONT_SIGN
+}
+
 /// Places `mesh`, posed into `pos`/`nrm` by pose(), at `at` turned by `yaw` and appends its visible
 /// triangles (unsorted) to `out`. `tex_slot` maps material slots to texture indices in the caller's table.
 pub fn emit(mesh: &Mesh, pos: &[Vec3], nrm: &[Vec3], at: Vec3, yaw: f32, view: &View, tex_slot: &[u16], out: &mut Vec<ScreenTri>) {
@@ -345,9 +358,10 @@ pub fn emit(mesh: &Mesh, pos: &[Vec3], nrm: &[Vec3], at: Vec3, yaw: f32, view: &
     let proj: Vec<Option<([f32; 2], f32)>> = world.iter().map(|p| view.project(*p)).collect();
     for (t, tri) in mesh.tris.iter().enumerate() {
         let (Some(a), Some(b), Some(c)) = (proj[tri[0] as usize], proj[tri[1] as usize], proj[tri[2] as usize]) else { continue };
-        // no back-face culling until the winding is checked in game: the far-to-near sort keeps it correct
+        // back faces culled: fewer triangles, and the far-to-near sort no longer flips a mesh's inside
+        // and outside around as the camera moves (chests wobbled). FRONT_SIGN checked with preview_outfit.
         let area = (b.0[0] - a.0[0]) * (c.0[1] - a.0[1]) - (b.0[1] - a.0[1]) * (c.0[0] - a.0[0]);
-        if area.abs() < 0.01 {
+        if area * front_sign() <= 0.01 {
             continue;
         }
         let n = rot * (nrm[tri[0] as usize] + nrm[tri[1] as usize] + nrm[tri[2] as usize]).normalize_or_zero();
@@ -360,6 +374,7 @@ pub fn emit(mesh: &Mesh, pos: &[Vec3], nrm: &[Vec3], at: Vec3, yaw: f32, view: &
             p: [a.0, b.0, c.0],
             uv: [uv(tri[0]), uv(tri[1]), uv(tri[2])],
             shade: (shade * 255.0) as u8,
+            ghost: false,
         });
     }
 }
@@ -406,7 +421,8 @@ mod tests {
                 let body = parts.iter().find(|m| m.nodes.iter().any(|n| n.name == "hand_r")).unwrap();
                 let hand = bone_matrix(body, &layers, "hand_r").unwrap();
                 let gslots: Vec<u16> = g.materials.iter().map(|n| g.textures.get(n).and_then(|p| crate::hud::load_png_file_for_test(p)).map(|t| { textures.push(t); (textures.len() - 1) as u16 }).unwrap_or(u16::MAX)).collect();
-                place(&g, crate::hud::grip(hand), &mut p, &mut n);
+                let m = if gun == "pickaxe" { crate::hud::pick_grip(hand) } else { crate::hud::grip(hand) };
+                place(&g, m, &mut p, &mut n);
                 emit(&g, &p, &n, Vec3::ZERO, 0.0, &view, &gslots, &mut tris);
             }
             tris.sort_unstable_by(|a, b| b.depth.total_cmp(&a.depth));

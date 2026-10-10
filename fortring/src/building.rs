@@ -116,9 +116,22 @@ pub fn preview(st: &State, cam_pos: Vec3, cam_fwd: Vec3) -> Option<(Vec3, f32)> 
     Some((pos, yaw))
 }
 
-/// Publishes this tile's build boxes for world::ray (collision for movement, camera and guns).
-pub fn refresh(st: &State) {
-    *world::BUILD_BOXES.lock().unwrap() = boxes(st).into_iter().map(|(_, b)| b).collect();
+/// Publishes this tile's build boxes for world::ray (collision for movement, camera and guns), and what
+/// the HUD draws: every piece here plus the placement preview in build mode.
+pub fn refresh(st: &mut State, cam_pos: Vec3, cam_fwd: Vec3) {
+    let here = boxes(st);
+    *world::BUILD_BOXES.lock().unwrap() = here.iter().map(|(_, b)| b.clone()).collect();
+    let mut draw: Vec<(usize, usize, [f32; 3], f32, bool)> = here.iter()
+        .map(|(i, b)| { let p = &st.saved.builds[*i]; (p.piece, p.material, b.center.into(), p.yaw, false) })
+        .collect();
+    if st.mode == crate::state::Mode::Build {
+        if let Some((local, yaw)) = preview(st, cam_pos, cam_fwd) {
+            if let Some(c) = local_to_havok(local) {
+                draw.push((st.build_piece, st.build_material, c.into(), yaw, true));
+            }
+        }
+    }
+    st.build_draw = draw;
 }
 
 pub fn tick(st: &mut State, inp: &Frame, dt: f32, now: f64, cam_pos: Vec3, cam_fwd: Vec3) {

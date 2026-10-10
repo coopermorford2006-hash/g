@@ -19,6 +19,23 @@ pub fn grip(hand: glam::Mat4) -> glam::Mat4 {
     glam::Mat4::from_translation(hand.w_axis.truncate() + glam::Vec3::new(0.0, -0.02, -0.06))
 }
 
+/// The pickaxe follows the right hand's full transform (it swings with it): rotation from the hand bone's
+/// axes to the pickaxe mesh (handle along +Y), in degrees XYZ, then a slide along the handle so the hand
+/// holds its lower part. Found with model::tests::preview_outfit (FORTRING_PREVIEW_GUN=pickaxe).
+const PICK_ROT_DEG: [f32; 3] = [0.0, 0.0, 90.0];
+const PICK_SLIDE: [f32; 3] = [0.0, 0.45, 0.0];
+
+pub fn pick_grip(hand: glam::Mat4) -> glam::Mat4 {
+    let (mut r, mut t) = (PICK_ROT_DEG, PICK_SLIDE);
+    #[cfg(test)]
+    {
+        let parse = |k: &str, d: [f32; 3]| std::env::var(k).ok().map(|v| { let n: Vec<f32> = v.split(',').filter_map(|x| x.trim().parse().ok()).collect(); [n[0], n[1], n[2]] }).unwrap_or(d);
+        r = parse("FORTRING_PICK_ROT", r);
+        t = parse("FORTRING_PICK_SLIDE", t);
+    }
+    hand * glam::Mat4::from_euler(glam::EulerRot::XYZ, r[0].to_radians(), r[1].to_radians(), r[2].to_radians()) * glam::Mat4::from_translation(glam::Vec3::from(t))
+}
+
 pub struct Hud {
     tex: HashMap<usize, (TextureId, [f32; 2])>,
     big_font: Option<imgui::FontId>,
@@ -30,14 +47,25 @@ pub struct Hud {
     clips: HashMap<&'static str, crate::anim::Clip>,
     playing: &'static str,
     anim_t: f32,
+    /// A state the controller wants must hold this long before the clip switches (grounded/airborne and
+    /// moving/still can flicker frame to frame, which looked like vibrating); switches counted for the log.
+    pending: (&'static str, f32),
+    switches: (u32, f32),
     posed: (Vec<Vec3>, Vec<Vec3>),
     /// Fortnite props by fortnite_assets row (chests, ammo boxes, weapons, consumables).
     props: HashMap<usize, (crate::model::Mesh, Vec<u16>)>,
+    /// Bounds centre of each prop mesh (glTF axes): build pieces are drawn centred on their box.
+    centers: HashMap<usize, Vec3>,
     textures_by_file: HashMap<std::path::PathBuf, u16>,
 }
 
-/// The locomotion clips the outfit plays (sheets/fortnite_assets anim_* rows).
-const LOCOMOTION: [(&str, usize); 6] = [
+/// The clips the outfit plays (sheets/fortnite_assets anim_* rows): locomotion, weapon stances, swings.
+const LOCOMOTION: [(&str, usize); 11] = [
+    ("anim_rifle_idle", FORTNITE_ASSETS_ANIM_RIFLE_IDLE),
+    ("anim_shotgun_idle", FORTNITE_ASSETS_ANIM_SHOTGUN_IDLE),
+    ("anim_pistol_idle", FORTNITE_ASSETS_ANIM_PISTOL_IDLE),
+    ("anim_launcher_idle", FORTNITE_ASSETS_ANIM_LAUNCHER_IDLE),
+    ("anim_pickaxe_swing", FORTNITE_ASSETS_ANIM_PICKAXE_SWING),
     ("anim_idle", FORTNITE_ASSETS_ANIM_IDLE),
     ("anim_jog", FORTNITE_ASSETS_ANIM_JOG),
     ("anim_sprint", FORTNITE_ASSETS_ANIM_SPRINT),
@@ -105,6 +133,7 @@ impl Hud {
             .chain(WEAPONS.iter().map(|w| w.fn_mesh))
             .chain(CONSUMABLES.iter().map(|c| c.fn_mesh))
             .chain(PICKAXE.iter().map(|p| p.fn_mesh))
+            .chain(BUILD_PIECES.iter().flat_map(|b| [b.fn_mesh_wood, b.fn_mesh_stone, b.fn_mesh_metal]))
             .collect();
         for row in rows {
             if self.props.contains_key(&row) {
@@ -112,6 +141,8 @@ impl Hud {
             }
             let path = crate::paths::cache_dir().join(FORTNITE_ASSETS[row].out);
             if let Some(mesh) = crate::model::load(&path) {
+                let (lo, hi) = crate::model::bounds(&mesh);
+                self.centers.insert(row, (lo + hi) * 0.5);
                 let slots = self.texture_slots(&mesh, rc);
                 self.props.insert(row, (mesh, slots));
             }
@@ -139,11 +170,24 @@ impl Hud {
             "anim_idle"
         };
         let want = if self.clips.contains_key(want) { want } else { "anim_idle" };
-        if want != self.playing {
+        let dt = unsafe { (*hudhook::imgui::sys::igGetIO()).DeltaTime }.clamp(0.0, 0.1);
+        if want == self.pending.0 {
+            self.pending.1 += dt;
+        } else {
+            self.pending = (want, 0.0);
+        }
+        if want != self.playing && self.pending.1 >= 0.12 {
             self.playing = want;
             self.anim_t = 0.0;
+            self.switches.0 += 1;
         }
-        let dt = unsafe { (*hudhook::imgui::sys::igGetIO()).DeltaTime }.clamp(0.0, 0.1);
+        self.switches.1 += dt;
+        if self.switches.1 >= 5.0 {
+            if self.switches.0 > 10 {
+                crate::log!("anim: {} clip switches in 5 s (state flickering)", self.switches.0);
+            }
+            self.switches = (0, 0.0);
+        }
         // jog/sprint cycles play faster or slower with the actual speed
         let rate = match want {
             "anim_jog" => (speed / MOVEMENT_RUN_SPEED_V).clamp(0.5, 1.5),
@@ -153,14 +197,24 @@ impl Hud {
         self.anim_t += dt * rate;
         let clip = self.clips.get(self.playing).map(|c| (c, self.anim_t));
         // holding a gun: the upper body plays the gun's idle (rifle / shotgun / pistol / launcher)
-        let (held, pickups) = STATE.lock().map(|s| (s.held_gun().map(|g| g.weapon), s.pickups.clone())).unwrap_or((None, Vec::new()));
+        let (held, pickups, pickaxe, cooldown, builds) = STATE.lock()
+            .map(|s| (s.held_gun().map(|g| g.weapon), s.pickups.clone(), s.held == Held::Pickaxe && s.mode == Mode::Combat, s.fire_cooldown, s.build_draw.clone()))
+            .unwrap_or((None, Vec::new(), false, 0.0, Vec::new()));
         let upper_clip = held.and_then(|w| match WEAPONS[w].class {
             "shotgun" => self.clips.get("anim_shotgun_idle"),
             "pistol" | "smg" => self.clips.get("anim_pistol_idle"),
             "launcher" => self.clips.get("anim_launcher_idle"),
             _ => self.clips.get("anim_rifle_idle"),
         });
-        let layers = crate::model::Layers { base: clip, upper: upper_clip.map(|c| (c, self.anim_t)) };
+        let mut layers = crate::model::Layers { base: clip, upper: upper_clip.map(|c| (c, self.anim_t)) };
+        // pickaxe swing: the upper body plays the harvesting swing once per swing, timed by the cooldown
+        let swing = PICKAXE[PICKAXE_DEFAULT].swing_s;
+        if pickaxe && cooldown > 0.0 && swing > 0.0 {
+            if let Some(c) = self.clips.get("anim_pickaxe_swing") {
+                let phase = (1.0 - cooldown / swing).clamp(0.0, 1.0);
+                layers.upper = Some((c, phase * c.duration() * 0.999));
+            }
+        }
         self.tris.clear();
         let yaw = body.1 + MODEL_YAW_OFFSET;
         let (pos, nrm) = &mut self.posed;
@@ -168,12 +222,33 @@ impl Hud {
             crate::model::pose(mesh, &layers, pos, nrm);
             crate::model::emit(mesh, pos, nrm, body.0, yaw, &view, slots, &mut self.tris);
         }
+        // the pickaxe swings with the right hand
+        if pickaxe {
+            let hand = self.outfit.iter().find_map(|(m, _)| crate::model::bone_matrix(m, &layers, "hand_r"));
+            if let (Some(hand), Some((pick, slots))) = (hand, self.props.get(&PICKAXE[PICKAXE_DEFAULT].fn_mesh)) {
+                crate::model::place(pick, pick_grip(hand), pos, nrm);
+                crate::model::emit(pick, pos, nrm, body.0, yaw, &view, slots, &mut self.tris);
+            }
+        }
         // the held gun follows the right hand
         if let Some(w) = held {
             let hand = self.outfit.iter().find_map(|(m, _)| crate::model::bone_matrix(m, &layers, "hand_r"));
             if let (Some(hand), Some((gun, slots))) = (hand, self.props.get(&WEAPONS[w].fn_mesh)) {
                 crate::model::place(gun, grip(hand), pos, nrm);
                 crate::model::emit(gun, pos, nrm, body.0, yaw, &view, slots, &mut self.tris);
+            }
+        }
+        // build pieces (the placement preview as a ghost)
+        for (piece, material, center, byaw, ghost) in builds.iter() {
+            let row = &BUILD_PIECES[*piece];
+            let asset = [row.fn_mesh_wood, row.fn_mesh_stone, row.fn_mesh_metal][(*material).min(2)];
+            if let (Some((mesh, slots)), Some(c)) = (self.props.get(&asset), self.centers.get(&asset)) {
+                let start = self.tris.len();
+                crate::model::place(mesh, glam::Mat4::from_translation(-*c), pos, nrm);
+                crate::model::emit(mesh, pos, nrm, Vec3::from(*center), *byaw, &view, slots, &mut self.tris);
+                if *ghost {
+                    self.tris[start..].iter_mut().for_each(|t| t.ghost = true);
+                }
             }
         }
         // chests and ammo boxes around the player, loot on the ground
@@ -227,7 +302,8 @@ impl Hud {
                     sys::ImDrawList_PushTextureID(dl, self.model_tex[t.tex as usize].id() as sys::ImTextureID);
                     current = Some(t.tex);
                 }
-                let c = 0xFF00_0000 | g << 16 | g << 8 | g;
+                // ImGui colours are ABGR; the preview is a translucent blue
+                let c = if t.ghost { 0x90FF_B060 } else { 0xFF00_0000 | g << 16 | g << 8 | g };
                 sys::ImDrawList_PrimReserve(dl, 3, 3);
                 for k in 0..3 {
                     sys::ImDrawList_PrimVtx(dl, v2(t.p[k]), v2(t.uv[k]), c);
@@ -249,8 +325,11 @@ impl Hud {
             clips: HashMap::new(),
             playing: "anim_idle",
             anim_t: 0.0,
+            pending: ("anim_idle", 0.0),
+            switches: (0, 0.0),
             posed: (Vec::new(), Vec::new()),
             props: HashMap::new(),
+            centers: HashMap::new(),
             textures_by_file: HashMap::new(),
         }
     }

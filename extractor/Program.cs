@@ -414,7 +414,18 @@ public static class Program
             }
             var p = new CUE4Parse.UE4.Assets.Exports.Material.CMaterialParams2();
             mat.GetParams(p, CUE4Parse.UE4.Assets.Exports.Material.EMaterialDepth.AllLayers);
-            if (!p.TryGetTexture2d(out var tex, CUE4Parse.UE4.Assets.Exports.Material.CMaterialParams2.Diffuse[0]) && !p.TryGetFirstTexture2d(out tex)) continue;
+            // the instance's own base colour parameter first: the generic lookup can return a default from
+            // the parent material (the chest got a 1-pixel noise texture instead of T_Gadget_Chest_Mark_III_D)
+            UTexture? tex = null;
+            CUE4Parse.UE4.Assets.Exports.Material.UMaterialInterface? m = mat;
+            for (var depth = 0; m != null && tex == null && depth < 6; depth++)
+            {
+                if (m is CUE4Parse.UE4.Assets.Exports.Material.UMaterialInstanceConstant mic)
+                    foreach (var tp in mic.TextureParameterValues)
+                        if (Regex.IsMatch(tp.Name, @"(?i)diffuse|base ?colou?r|albedo|^d$") && tp.ParameterValue != null && tp.ParameterValue.TryLoad(out UTexture t)) { tex = t; break; }
+                m = m is CUE4Parse.UE4.Assets.Exports.Material.UMaterialInstance mi && mi.Parent != null && mi.Parent.TryLoad(out CUE4Parse.UE4.Assets.Exports.Material.UMaterialInterface parent) ? parent : null;
+            }
+            if (tex == null && !p.TryGetTexture2d(out tex, CUE4Parse.UE4.Assets.Exports.Material.CMaterialParams2.Diffuse[0]) && !p.TryGetFirstTexture2d(out tex)) continue;
             var bitmap = tex?.Decode(2048);
             if (bitmap == null) continue;
             var rel = texDir + "/" + mat.Name + ".png";
