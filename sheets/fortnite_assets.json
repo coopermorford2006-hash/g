@@ -607,7 +607,7 @@
   {
    "id": "anim_rifle_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Idle/(.*/)?AssaultRifle_Idle_Patrol$  (AnimSequence on the Fortnite player skeleton, male medium)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jog/AssaultRifle_HipNonTargeted/M_Jog_AssaultRifle_N_Core$  (full-pose 'Core' stance; the Idle/IdleNoise/Patrol clips are additive layers)",
    "out": "anim/anim_rifle_idle.psa",
    "required": true
   },
@@ -635,7 +635,7 @@
   {
    "id": "anim_shotgun_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Walk/Patrol/PumpShotgun_Paprika/PaprikaPumpShotgun_Idle_Patrol$  (AnimSequence on the Fortnite player skeleton, male medium)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jog/AssaultRifle_HipNonTargeted/M_Jog_AssaultRifle_N_Core$  (full-pose 'Core' stance; the Idle/IdleNoise/Patrol clips are additive layers)",
    "out": "anim/anim_shotgun_idle.psa",
    "required": true
   },
@@ -656,7 +656,7 @@
   {
    "id": "anim_pistol_idle",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Idle/(.*/)?Pistol_Idle_Patrol$  (AnimSequence on the Fortnite player skeleton, male medium)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jog/PistolHF/M_Jog_PistolDS_N_Core$  (full-pose 'Core' stance; the Idle/IdleNoise/Patrol clips are additive layers)",
    "out": "anim/anim_pistol_idle.psa",
    "required": true
   },

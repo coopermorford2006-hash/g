@@ -182,46 +182,85 @@ pub fn load(path: &Path) -> Option<Mesh> {
     Some(m)
 }
 
+/// What a mesh plays: a full-body clip, optionally overridden from `spine_01` up by another (holding a gun
+/// while the legs jog), each with its time in seconds.
+#[derive(Clone, Copy, Default)]
+pub struct Layers<'a> {
+    pub base: Option<(&'a crate::anim::Clip, f32)>,
+    pub upper: Option<(&'a crate::anim::Clip, f32)>,
+}
+
+impl<'a> Layers<'a> {
+    pub fn single(clip: Option<(&'a crate::anim::Clip, f32)>) -> Self {
+        Layers { base: clip, upper: None }
+    }
+}
+
+/// True when node `i` is spine_01 or below it (the upper-body layer).
+fn in_upper(mesh: &Mesh, mut i: usize) -> bool {
+    loop {
+        if mesh.nodes[i].name == "spine_01" {
+            return true;
+        }
+        match mesh.nodes[i].parent {
+            Some(p) => i = p,
+            None => return false,
+        }
+    }
+}
+
+fn resolve(i: usize, mesh: &Mesh, layers: &Layers, global: &mut Vec<Option<Mat4>>) -> Mat4 {
+    if let Some(m) = global[i] {
+        return m;
+    }
+    let n = &mesh.nodes[i];
+    let (mut t, mut r) = (n.t, n.r);
+    let clip = match layers.upper {
+        Some(u) if in_upper(mesh, i) => Some(u),
+        _ => layers.base,
+    };
+    if let Some((c, time)) = clip {
+        if let Some(&b) = c.by_name.get(&n.name) {
+            let (kt, kr) = c.sample(b, time);
+            r = kr;
+            // translations stay at the rest pose (bone lengths of this outfit; additive or odd clips
+            // can't crush the skeleton), except the pelvis bob
+            if n.name == "pelvis" && kt.length() > 0.2 {
+                t = kt;
+            }
+        }
+    }
+    let local = Mat4::from_scale_rotation_translation(n.s, r, t);
+    let m = match n.parent {
+        Some(p) => resolve(p, mesh, layers, global) * local,
+        None => local,
+    };
+    global[i] = Some(m);
+    m
+}
+
+/// Global (model space, glTF axes) transform of the node called `name` under `layers`.
+pub fn bone_matrix(mesh: &Mesh, layers: &Layers, name: &str) -> Option<Mat4> {
+    let i = mesh.nodes.iter().position(|n| n.name == name)?;
+    let mut global = vec![None; mesh.nodes.len()];
+    Some(resolve(i, mesh, layers, &mut global))
+}
+
 /// Poses `mesh` with `clip` at `t` seconds (bind pose without a clip) into `pos`/`nrm`, mirrored into
 /// Elden Ring's left-handed space (glTF is right-handed; the game's camera basis has right = up x forward).
 /// Bones the clip lacks keep their rest pose; the root bone keeps its rest translation (the controller
 /// moves the character, not the animation).
-pub fn pose(mesh: &Mesh, clip: Option<(&crate::anim::Clip, f32)>, pos: &mut Vec<Vec3>, nrm: &mut Vec<Vec3>) {
+pub fn pose(mesh: &Mesh, layers: &Layers, pos: &mut Vec<Vec3>, nrm: &mut Vec<Vec3>) {
     pos.clear();
     nrm.clear();
     let mirror = |v: Vec3| Vec3::new(v.x, v.y, -v.z);
-    if clip.is_none() || mesh.joints.is_empty() || mesh.ibm.len() != mesh.joints.len() {
+    if layers.base.is_none() || mesh.joints.is_empty() || mesh.ibm.len() != mesh.joints.len() {
         pos.extend(mesh.pos.iter().map(|p| mirror(*p)));
         nrm.extend(mesh.nrm.iter().map(|n| mirror(*n)));
         return;
     }
-    fn resolve(i: usize, mesh: &Mesh, clip: Option<(&crate::anim::Clip, f32)>, global: &mut Vec<Option<Mat4>>) -> Mat4 {
-        if let Some(m) = global[i] {
-            return m;
-        }
-        let n = &mesh.nodes[i];
-        let (mut t, mut r) = (n.t, n.r);
-        if let Some((c, time)) = clip {
-            if let Some(&b) = c.by_name.get(&n.name) {
-                let (kt, kr) = c.sample(b, time);
-                r = kr;
-                // translations stay at the rest pose (bone lengths of this outfit; additive or odd clips
-                // can't crush the skeleton), except the pelvis bob
-                if n.name == "pelvis" && kt.length() > 0.2 {
-                    t = kt;
-                }
-            }
-        }
-        let local = Mat4::from_scale_rotation_translation(n.s, r, t);
-        let m = match n.parent {
-            Some(p) => resolve(p, mesh, clip, global) * local,
-            None => local,
-        };
-        global[i] = Some(m);
-        m
-    }
     let mut global: Vec<Option<Mat4>> = vec![None; mesh.nodes.len()];
-    let jm: Vec<Mat4> = mesh.joints.iter().zip(&mesh.ibm).map(|(&j, ibm)| resolve(j, mesh, clip, &mut global) * *ibm).collect();
+    let jm: Vec<Mat4> = mesh.joints.iter().zip(&mesh.ibm).map(|(&j, ibm)| resolve(j, mesh, layers, &mut global) * *ibm).collect();
     for v in 0..mesh.pos.len() {
         let (j, w) = (mesh.vjoints[v], mesh.vweights[v]);
         let (mut p, mut q, mut total) = (Vec3::ZERO, Vec3::ZERO, 0.0);
@@ -243,6 +282,15 @@ pub fn pose(mesh: &Mesh, clip: Option<(&crate::anim::Clip, f32)>, pos: &mut Vec<
         pos.push(mirror(p));
         nrm.push(mirror(q.normalize_or_zero()));
     }
+}
+
+/// The mesh in its bind pose moved by `m` (glTF axes), mirrored like pose(): for things held in a hand.
+pub fn place(mesh: &Mesh, m: Mat4, pos: &mut Vec<Vec3>, nrm: &mut Vec<Vec3>) {
+    let mirror = |v: Vec3| Vec3::new(v.x, v.y, -v.z);
+    pos.clear();
+    nrm.clear();
+    pos.extend(mesh.pos.iter().map(|p| mirror(m.transform_point3(*p))));
+    nrm.extend(mesh.nrm.iter().map(|n| mirror(m.transform_vector3(*n).normalize_or_zero())));
 }
 
 /// Bounds of a mesh (min, max), for logging what was loaded.
@@ -347,9 +395,19 @@ mod tests {
             let view = View::new(cam_pos, fwd, 40.0, [w as f32, h as f32]);
             let mut tris = Vec::new();
             let (mut p, mut n) = (Vec::new(), Vec::new());
+            let upper = std::env::var("FORTRING_PREVIEW_UPPER").ok().and_then(|c| crate::anim::load(&crate::paths::cache_dir().join("anim").join(format!("{c}.psa"))));
+            let layers = Layers { base: clip.as_ref().map(|c| (c, t)), upper: upper.as_ref().map(|c| (c, t)) };
             for (m, s) in parts.iter().zip(&slots) {
-                pose(m, clip.as_ref().map(|c| (c, t)), &mut p, &mut n);
+                pose(m, &layers, &mut p, &mut n);
                 emit(m, &p, &n, Vec3::ZERO, 0.0, &view, s, &mut tris);
+            }
+            if let Ok(gun) = std::env::var("FORTRING_PREVIEW_GUN") {
+                let g = load(&crate::paths::cache_dir().join("static_mesh").join(format!("{gun}.glb"))).unwrap();
+                let body = parts.iter().find(|m| m.nodes.iter().any(|n| n.name == "hand_r")).unwrap();
+                let hand = bone_matrix(body, &layers, "hand_r").unwrap();
+                let gslots: Vec<u16> = g.materials.iter().map(|n| g.textures.get(n).and_then(|p| crate::hud::load_png_file_for_test(p)).map(|t| { textures.push(t); (textures.len() - 1) as u16 }).unwrap_or(u16::MAX)).collect();
+                place(&g, crate::hud::grip(hand), &mut p, &mut n);
+                emit(&g, &p, &n, Vec3::ZERO, 0.0, &view, &gslots, &mut tris);
             }
             tris.sort_unstable_by(|a, b| b.depth.total_cmp(&a.depth));
             let mut img = vec![40u8; w * h * 4];

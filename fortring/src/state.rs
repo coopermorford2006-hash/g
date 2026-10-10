@@ -96,6 +96,8 @@ pub struct State {
     pub prompt_color: [f32; 4],
     pub progress: Option<(String, f32)>,
     pub damage_numbers: Vec<([f32; 3], f32, f32, u8)>,
+    /// Shot tracers drawn by the HUD: (from, to, seconds left).
+    pub tracers: Vec<([f32; 3], [f32; 3], f32)>,
     pub eliminated: f32,
     pub message: Option<(String, f32)>,
     pub slot: u32,
@@ -136,6 +138,7 @@ impl State {
             prompt_color: [1.0; 4],
             progress: None,
             damage_numbers: Vec::new(),
+            tracers: Vec::new(),
             eliminated: 0.0,
             message: None,
             slot: 0,

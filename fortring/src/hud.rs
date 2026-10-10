@@ -12,6 +12,13 @@ use std::collections::HashMap;
 /// model::tests::preview_outfit), the movement code faces +Z at yaw 0.
 const MODEL_YAW_OFFSET: f32 = std::f32::consts::PI;
 
+/// Where a held weapon goes: at the right hand's position, barrel along the body's forward axis (weapon
+/// meshes and the outfit both face +Z in glTF space), so it points where the character faces regardless
+/// of the hand bone's own axes. Checked with model::tests::preview_outfit (FORTRING_PREVIEW_GUN=mesh_ar).
+pub fn grip(hand: glam::Mat4) -> glam::Mat4 {
+    glam::Mat4::from_translation(hand.w_axis.truncate() + glam::Vec3::new(0.0, -0.02, -0.06))
+}
+
 pub struct Hud {
     tex: HashMap<usize, (TextureId, [f32; 2])>,
     big_font: Option<imgui::FontId>,
@@ -24,6 +31,9 @@ pub struct Hud {
     playing: &'static str,
     anim_t: f32,
     posed: (Vec<Vec3>, Vec<Vec3>),
+    /// Fortnite props by fortnite_assets row (chests, ammo boxes, weapons, consumables).
+    props: HashMap<usize, (crate::model::Mesh, Vec<u16>)>,
+    textures_by_file: HashMap<std::path::PathBuf, u16>,
 }
 
 /// The locomotion clips the outfit plays (sheets/fortnite_assets anim_* rows).
@@ -44,25 +54,10 @@ impl Hud {
     /// outfit.glb, outfit_1.glb, ... (the outfit's parts) and their material textures.
     fn load_outfit(&mut self, rc: &mut dyn RenderContext) {
         let first = crate::paths::cache_dir().join(FORTNITE_ASSETS[FORTNITE_ASSETS_OUTFIT].out);
-        let mut loaded: HashMap<std::path::PathBuf, u16> = HashMap::new();
         for i in 0.. {
             let path = if i == 0 { first.clone() } else { first.with_file_name(format!("{}_{i}.glb", first.file_stem().unwrap().to_string_lossy())) };
             let Some(mesh) = crate::model::load(&path) else { break };
-            let mut slots = Vec::new();
-            for name in &mesh.materials {
-                let slot = mesh.textures.get(name).and_then(|png| {
-                    if let Some(&s) = loaded.get(png) {
-                        return Some(s);
-                    }
-                    let (rgba, w, h) = load_png_file(png)?;
-                    let id = rc.load_texture(&rgba, w, h).ok()?;
-                    self.model_tex.push(id);
-                    let s = (self.model_tex.len() - 1) as u16;
-                    loaded.insert(png.clone(), s);
-                    Some(s)
-                });
-                slots.push(slot.unwrap_or(u16::MAX));
-            }
+            let slots = self.texture_slots(&mesh, rc);
             let (lo, hi) = crate::model::bounds(&mesh);
             crate::log!("model: {} - {} vertices, {} triangles, materials {:?} -> textures {:?}, bounds {lo:.2}..{hi:.2}",
                 path.file_name().unwrap().to_string_lossy(), mesh.pos.len(), mesh.tris.len(), mesh.materials, slots);
@@ -82,6 +77,46 @@ impl Hud {
                 None => crate::log!("anim: {name} missing at {}", path.display()),
             }
         }
+    }
+
+    /// Uploads a mesh's material textures (once per file); returns material slot -> model_tex index.
+    fn texture_slots(&mut self, mesh: &crate::model::Mesh, rc: &mut dyn RenderContext) -> Vec<u16> {
+        let mut slots = Vec::new();
+        for name in &mesh.materials {
+            let slot = mesh.textures.get(name).and_then(|png| {
+                if let Some(&s) = self.textures_by_file.get(png) {
+                    return Some(s);
+                }
+                let (rgba, w, h) = load_png_file(png)?;
+                let id = rc.load_texture(&rgba, w, h).ok()?;
+                self.model_tex.push(id);
+                let s = (self.model_tex.len() - 1) as u16;
+                self.textures_by_file.insert(png.clone(), s);
+                Some(s)
+            });
+            slots.push(slot.unwrap_or(u16::MAX));
+        }
+        slots
+    }
+
+    /// Chests, ammo boxes, weapons and consumables: every fn_mesh the sheets reference.
+    fn load_props(&mut self, rc: &mut dyn RenderContext) {
+        let rows: Vec<usize> = CONTAINERS.iter().map(|c| c.fn_mesh)
+            .chain(WEAPONS.iter().map(|w| w.fn_mesh))
+            .chain(CONSUMABLES.iter().map(|c| c.fn_mesh))
+            .chain(PICKAXE.iter().map(|p| p.fn_mesh))
+            .collect();
+        for row in rows {
+            if self.props.contains_key(&row) {
+                continue;
+            }
+            let path = crate::paths::cache_dir().join(FORTNITE_ASSETS[row].out);
+            if let Some(mesh) = crate::model::load(&path) {
+                let slots = self.texture_slots(&mesh, rc);
+                self.props.insert(row, (mesh, slots));
+            }
+        }
+        crate::log!("model: {} props loaded", self.props.len());
     }
 
     /// The Fortnite character at the player's feet (drawn under the HUD).
@@ -117,11 +152,57 @@ impl Hud {
         };
         self.anim_t += dt * rate;
         let clip = self.clips.get(self.playing).map(|c| (c, self.anim_t));
+        // holding a gun: the upper body plays the gun's idle (rifle / shotgun / pistol / launcher)
+        let (held, pickups) = STATE.lock().map(|s| (s.held_gun().map(|g| g.weapon), s.pickups.clone())).unwrap_or((None, Vec::new()));
+        let upper_clip = held.and_then(|w| match WEAPONS[w].class {
+            "shotgun" => self.clips.get("anim_shotgun_idle"),
+            "pistol" | "smg" => self.clips.get("anim_pistol_idle"),
+            "launcher" => self.clips.get("anim_launcher_idle"),
+            _ => self.clips.get("anim_rifle_idle"),
+        });
+        let layers = crate::model::Layers { base: clip, upper: upper_clip.map(|c| (c, self.anim_t)) };
         self.tris.clear();
+        let yaw = body.1 + MODEL_YAW_OFFSET;
         let (pos, nrm) = &mut self.posed;
         for (mesh, slots) in &self.outfit {
-            crate::model::pose(mesh, clip, pos, nrm);
-            crate::model::emit(mesh, pos, nrm, body.0, body.1 + MODEL_YAW_OFFSET, &view, slots, &mut self.tris);
+            crate::model::pose(mesh, &layers, pos, nrm);
+            crate::model::emit(mesh, pos, nrm, body.0, yaw, &view, slots, &mut self.tris);
+        }
+        // the held gun follows the right hand
+        if let Some(w) = held {
+            let hand = self.outfit.iter().find_map(|(m, _)| crate::model::bone_matrix(m, &layers, "hand_r"));
+            if let (Some(hand), Some((gun, slots))) = (hand, self.props.get(&WEAPONS[w].fn_mesh)) {
+                crate::model::place(gun, grip(hand), pos, nrm);
+                crate::model::emit(gun, pos, nrm, body.0, yaw, &view, slots, &mut self.tris);
+            }
+        }
+        // chests and ammo boxes around the player, loot on the ground
+        let spin = (unsafe { hudhook::imgui::sys::igGetTime() } as f32) * 1.5;
+        for c in crate::loot::near_containers() {
+            if c.pos.distance(body.0) > 80.0 {
+                continue;
+            }
+            if let Some((mesh, slots)) = self.props.get(&CONTAINERS[c.kind].fn_mesh) {
+                let yaw = c.key.bytes().fold(0u32, |h, b| h.wrapping_mul(31).wrapping_add(b as u32)) as f32 / u32::MAX as f32 * std::f32::consts::TAU;
+                crate::model::place(mesh, glam::Mat4::IDENTITY, pos, nrm);
+                crate::model::emit(mesh, pos, nrm, c.pos, yaw, &view, slots, &mut self.tris);
+            }
+        }
+        for p in pickups.iter() {
+            let at = Vec3::from(p.pos);
+            if at.distance(body.0) > 40.0 {
+                continue;
+            }
+            let row = match (&p.gun, p.item) {
+                (Some(g), _) => Some(WEAPONS[g.weapon].fn_mesh),
+                (None, Ref::Consumables(c)) => Some(CONSUMABLES[c].fn_mesh),
+                _ => None,
+            };
+            if let Some((mesh, slots)) = row.and_then(|r| self.props.get(&r)) {
+                let bob = (spin * 1.3).sin() * 0.06;
+                crate::model::place(mesh, glam::Mat4::IDENTITY, pos, nrm);
+                crate::model::emit(mesh, pos, nrm, at + Vec3::Y * (0.25 + bob), spin, &view, slots, &mut self.tris);
+            }
         }
         self.tris.sort_unstable_by(|a, b| b.depth.total_cmp(&a.depth));
         use hudhook::imgui::sys;
@@ -169,6 +250,8 @@ impl Hud {
             playing: "anim_idle",
             anim_t: 0.0,
             posed: (Vec::new(), Vec::new()),
+            props: HashMap::new(),
+            textures_by_file: HashMap::new(),
         }
     }
 }
@@ -229,6 +312,7 @@ impl ImguiRenderLoop for Hud {
         }
         crate::log!("hud: {} Fortnite textures loaded", self.tex.len());
         self.load_outfit(rc);
+        self.load_props(rc);
         let font = crate::paths::cache_dir().join(FORTNITE_ASSETS[FORTNITE_ASSETS_FONT_BURBANK].out);
         // ImGui asserts (and the game aborts) on bytes stb_truetype can't parse: only hand it a real sfnt
         let is_sfnt = |b: &[u8]| matches!(b.get(..4), Some([0, 1, 0, 0]) | Some(b"OTTO") | Some(b"true") | Some(b"ttcf"));
@@ -374,6 +458,13 @@ impl ImguiRenderLoop for Hud {
         if st.hit_marker > 0.0 {
             for (dx, dy) in [(1.0, 1.0), (-1.0, 1.0), (1.0, -1.0), (-1.0, -1.0)] {
                 dl.add_line([p[0] + dx * 6.0, p[1] + dy * 6.0], [p[0] + dx * 14.0, p[1] + dy * 14.0], white).thickness(2.5).build();
+            }
+        }
+
+        // shot tracers
+        for (from, to, life) in st.tracers.iter() {
+            if let (Some(a), Some(b)) = (project(Vec3::from(*from), display), project(Vec3::from(*to), display)) {
+                dl.add_line(a, b, col([1.0, 0.92, 0.55, (life / 0.06).min(1.0) * 0.9])).thickness(2.0).build();
             }
         }
 

@@ -228,12 +228,28 @@ fn cone(dir: Vec3, half_angle_deg: f32) -> Vec3 {
     (dir * a.cos() + (right * t.cos() + up * t.sin()) * a.sin()).normalize()
 }
 
-/// Who the crosshair is on: (index into nearby list, is head) by ray vs capsule.
+/// Who the crosshair is on: is head, by ray vs capsule.
 fn aimed_target(from: Vec3, dir: Vec3, range: f32) -> Option<bool> {
+    hitscan(from, dir, range).map(|h| h.head)
+}
+
+/// What a hitscan ray hits first: a character (capsule test) not hidden behind map collision.
+pub struct Hit {
+    pub chr: *mut eldenring::cs::ChrIns,
+    pub dist: f32,
+    pub head: bool,
+}
+
+pub fn hitscan(from: Vec3, dir: Vec3, range: f32) -> Option<Hit> {
     let wcm = unsafe { <eldenring::cs::WorldChrMan as fromsoftware_shared::FromStatic>::instance_mut() }.ok()?;
-    let mut best: Option<(f32, bool)> = None;
+    let me = world::player().map(|p| &p.chr_ins as *const eldenring::cs::ChrIns);
+    let mut best: Option<Hit> = None;
     for e in wcm.chr_inses_by_distance.iter().take(48) {
-        let chr = unsafe { e.chr_ins.as_ref() };
+        let ptr = e.chr_ins.as_ptr();
+        if Some(ptr as *const _) == me {
+            continue;
+        }
+        let chr = unsafe { &*ptr };
         if chr.modules.data.hp <= 0 {
             continue;
         }
@@ -251,12 +267,30 @@ fn aimed_target(from: Vec3, dir: Vec3, range: f32) -> Option<bool> {
         let axis = Vec3::new(base.x, base.y + dy, base.z);
         if closest.distance(axis) <= r && closest.y >= base.y - 0.1 && closest.y <= base.y + h + 0.2 {
             let head = closest.y > base.y + h * 0.82;
-            if best.map(|(d, _)| along < d).unwrap_or(true) {
-                best = Some((along, head));
+            if best.as_ref().map(|b| along < b.dist).unwrap_or(true) {
+                best = Some(Hit { chr: ptr, dist: along, head });
             }
         }
     }
-    best.map(|(_, h)| h)
+    // walls block shots
+    let hit = best?;
+    match world::map_ray(from, from + dir * hit.dist) {
+        Some(wall) if wall.distance(from) < hit.dist - 0.3 => None,
+        _ => Some(hit),
+    }
+}
+
+/// Fortnite damage straight to a character's Elden Ring HP (hitscan; SpawnBullet's signature on
+/// 2.7.1.0 is not confirmed). Returns the damage dealt.
+fn damage(hit: &Hit, amount: f32) -> f32 {
+    let chr = unsafe { &mut *hit.chr };
+    let data = &mut chr.modules.data;
+    let before = data.hp;
+    data.hp = (data.hp - amount.round() as i32).max(0);
+    if data.hp == 0 && before > 0 {
+        crate::log!("guns: killed a character ({} HP)", data.max_hp);
+    }
+    (before - data.hp) as f32
 }
 
 pub fn falloff(row: &WeaponsRow, dist: f32) -> f32 {
@@ -292,8 +326,12 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, muzzle: Vec3, cam_pos: Vec3, c
         if inp.down(CONTROLS_FIRE) && st.fire_cooldown <= 0.0 && st.mode == crate::state::Mode::Combat {
             st.fire_cooldown = pick.swing_s;
             let tier = crate::loot::tier_here();
-            if set_shot(pick.damage * REGION_TIERS[tier].damage_mult, 60.0, pick.reach_m, 0.5) {
-                spawn(GUN_BULLET.load(Ordering::Relaxed), muzzle, cam_fwd);
+            let _ = muzzle;
+            if let Some(hit) = hitscan(cam_pos, cam_fwd, pick.reach_m + CAMERA_BOOM_LENGTH_M_V) {
+                let dealt = damage(&hit, pick.damage * REGION_TIERS[tier].damage_mult);
+                let at = cam_pos + cam_fwd * hit.dist;
+                st.hit_marker = 0.25;
+                st.damage_numbers.push(([at.x, at.y, at.z], dealt, 1.0, 0));
             }
             crate::audio::play(pick.fn_swing_sound, None);
             crate::harvest::swing(st, cam_pos, cam_fwd, pick.reach_m + CAMERA_BOOM_LENGTH_M_V);
@@ -360,19 +398,29 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, muzzle: Vec3, cam_pos: Vec3, c
     let dist = aim_point.distance(muzzle);
     let head = aimed_target(cam_pos, cam_fwd, row.range_m);
     let mult = if head == Some(true) { row.headshot_mult } else { 1.0 };
-    let per_pellet = gun.damage() * falloff(row, dist) * mult / row.pellets as f32;
-    if set_shot(per_pellet, row.bullet_speed_mps, row.range_m, 0.08) {
-        for _ in 0..row.pellets {
-            spawn(GUN_BULLET.load(Ordering::Relaxed), muzzle, cone(dir, spread));
+    let _ = dir;
+    // hitscan pellets from the camera through the crosshair with spread; tracers from the muzzle
+    let mut dealt = 0.0;
+    let mut hit_at: Option<Vec3> = None;
+    for _ in 0..row.pellets {
+        let pdir = cone(cam_fwd, spread);
+        let end = world::ray(cam_pos, cam_pos + pdir * row.range_m).unwrap_or(cam_pos + pdir * row.range_m);
+        if let Some(hit) = hitscan(cam_pos, pdir, row.range_m) {
+            let m = if hit.head { row.headshot_mult } else { 1.0 };
+            dealt += damage(&hit, gun.damage() * falloff(row, hit.dist) * m / row.pellets as f32);
+            hit_at = Some(cam_pos + pdir * hit.dist);
         }
+        let to = hit_at.unwrap_or(end);
+        st.tracers.push(([muzzle.x, muzzle.y, muzzle.z], [to.x, to.y, to.z], 0.06));
     }
     if row.explosion_radius_m > 0.0 {
         crate::loot::queue_blast(aim_point, dist / row.bullet_speed_mps, gun.damage(), row.explosion_radius_m, row.build_damage_mult);
     }
-    if head.is_some() {
+    if let Some(at) = hit_at {
         st.hit_marker = 0.25;
-        st.damage_numbers.push(([aim_point.x, aim_point.y, aim_point.z], gun.damage() * mult, 1.0, head.unwrap() as u8));
+        st.damage_numbers.push(([at.x, at.y, at.z], dealt, 1.0, (head == Some(true)) as u8));
     }
+    let _ = mult;
     crate::building::bullet_hits(muzzle, dir, row.range_m, gun.damage() * row.build_damage_mult, st);
     st.bloom = (st.bloom + row.bloom_per_shot_deg).min(row.spread_hip_deg * 2.0);
     st.pitch = (st.pitch + row.recoil_pitch_deg.to_radians() * (1.0 - 0.5 * st.ads)).min(CAMERA_PITCH_MAX_DEG_V.to_radians());

@@ -105,12 +105,15 @@ pub fn gameplay() {
     }
     input::MOD_OWNS_INPUT.store(!er, std::sync::atomic::Ordering::Relaxed);
     // every control with an Elden Ring key presses that key (interact was blocked and never forwarded)
+    // ...except interact while the mod shows its own prompt (chest, ammo box, pickup): that E is the mod's
+    let mod_prompt = st.prompt.is_some();
     for (c, row) in CONTROLS.iter().enumerate() {
         if row.er_key != "none" && row.owner != "mod" {
-            input::passthrough(row, !er && inp.down(c));
+            let mine = c == CONTROLS_INTERACT && mod_prompt;
+            input::passthrough(row, !er && !mine && inp.down(c));
         }
     }
-    if !er && inp.pressed(CONTROLS_INTERACT) {
+    if !er && !mod_prompt && inp.pressed(CONTROLS_INTERACT) {
         fr.er_hold_until = t + 2.5;
         crate::log!("input: interact passed to Elden Ring; it drives for 2.5 s");
     }
@@ -174,6 +177,10 @@ pub fn gameplay() {
         d.2 -= dt;
     }
     st.damage_numbers.retain(|d| d.2 > 0.0);
+    for t in st.tracers.iter_mut() {
+        t.2 -= dt;
+    }
+    st.tracers.retain(|t| t.2 > 0.0);
     if let Some((_, left)) = st.message.as_mut() {
         *left -= dt;
     }

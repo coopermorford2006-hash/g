@@ -139,7 +139,7 @@ mod tests_frames {
     #[test]
     #[ignore]
     fn frames() {
-        for clip_name in ["anim_jog", "anim_idle", "anim_sprint", "anim_pickaxe_swing"] {
+        for clip_name in ["anim_rifle_idle", "anim_rifle_ads", "anim_rifle_fire", "anim_rifle_reload", "anim_shotgun_idle", "anim_pistol_idle", "anim_launcher_idle", "anim_pickaxe_idle", "anim_crouch_idle", "anim_fall"] {
             let c = super::load(&crate::paths::cache_dir().join(format!("anim/{clip_name}.psa"))).unwrap();
             let n = c.bones.len();
             let moving = (0..n).filter(|&b| (0..c.frames).any(|f| c.keys[f * n + b].1.angle_between(c.keys[b].1) > 0.01)).count();
