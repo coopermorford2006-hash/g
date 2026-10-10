@@ -164,6 +164,12 @@ impl State {
         self.slot = slot;
         let path = crate::paths::sidecar(slot);
         self.saved = std::fs::read(&path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+        // containers that refill (ammo boxes, spawn_rules respawn "on_rest") are closed again on load
+        let refills: Vec<&str> = crate::generated::CONTAINERS.iter()
+            .filter(|c| crate::generated::SPAWN_RULES[c.placement].respawn != "never")
+            .map(|c| c.id)
+            .collect();
+        self.saved.opened.retain(|k| !refills.iter().any(|id| k.contains(&format!(":{id}:"))));
         crate::log!("state: loaded slot {slot} ({} builds, {} chests opened)", self.saved.builds.len(), self.saved.opened.len());
     }
 

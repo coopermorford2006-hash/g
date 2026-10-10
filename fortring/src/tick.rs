@@ -27,9 +27,13 @@ pub struct Frame {
     pub er_hold_until: f64,
     /// Havok position minus block position of the player: changes only when Havok re-centres its origin.
     pub havok_origin: Option<Vec3>,
+    /// Camera height smoothing on steps and uneven ground: the camera lags the feet by this much (m),
+    /// decaying; feet height of the last frame in block coordinates.
+    pub cam_lag_y: f32,
+    pub last_feet_y: Option<f32>,
 }
 
-pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, view: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0, havok_origin: None });
+pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, view: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0, havok_origin: None, cam_lag_y: 0.0, last_feet_y: None });
 
 /// True when Elden Ring itself should drive: a menu, map, dialogue, riding Torrent, a ladder, death.
 fn er_drives() -> bool {
@@ -174,7 +178,22 @@ pub fn gameplay() {
     building::refresh(&st);
 
     let feet = v(&p.chr_ins.modules.physics.position);
-    let head = feet + Vec3::Y * MOVEMENT_CAPSULE_HEIGHT_V * if st.crouched { 0.7 } else { 0.95 };
+    let mut head = feet + Vec3::Y * MOVEMENT_CAPSULE_HEIGHT_V * if st.crouched { 0.7 } else { 0.95 };
+    // the feet snap onto uneven ground and steps; ease the camera over those instead of bouncing with them
+    // (block coordinates, so Havok re-centring doesn't count as a step)
+    let feet_y = p.block_position.y;
+    let (_, grounded, _) = movement::speed_now();
+    if let Some(last) = fr.last_feet_y {
+        let dy = feet_y - last;
+        if grounded && dy.abs() < 0.6 {
+            fr.cam_lag_y -= dy;
+        } else {
+            fr.cam_lag_y = 0.0;
+        }
+    }
+    fr.last_feet_y = Some(feet_y);
+    fr.cam_lag_y *= (-14.0 * dt).exp();
+    head.y += fr.cam_lag_y;
     let (cam_pos, cam_fwd, fov) = camera::pose(&st, head);
     fr.cam = Some((cam_pos, cam_fwd, fov));
     fr.body = Some((feet, st.yaw));

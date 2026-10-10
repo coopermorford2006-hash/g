@@ -50,6 +50,45 @@ pub fn load_graces() {
     crate::log!("loot: {} Sites of Grace anchor containers", w.graces.len());
 }
 
+/// A spot for a container around a grace: up to 8 directions (starting from the key's own) and 3 heights;
+/// walks out at that height stopping short of walls, then finds the floor below. Accepts a floor within
+/// 4 m of the grace's height and at least 40% of the wanted distance out (open-world slopes stopped a
+/// single flat ray; caves made a drop from high above land on the ceiling).
+fn place_near(gpos: Vec3, key: &str, offset: f32) -> Option<Vec3> {
+    let start = hash01(&(key.to_string() + "a")) * std::f32::consts::TAU;
+    let r = offset * (0.6 + 0.4 * hash01(&(key.to_string() + "r")));
+    let mut best: Option<(f32, Vec3)> = None;
+    for k in 0..8 {
+        let ang = start + k as f32 * std::f32::consts::TAU / 8.0;
+        let dir = Vec3::new(ang.cos(), 0.0, ang.sin());
+        for h in [1.0, 2.5, 4.5] {
+            let from = gpos + Vec3::Y * h;
+            let reach = match world::map_ray(from, from + dir * r) {
+                Some(wall) => (wall.distance(from) - 0.8).max(0.0),
+                None => r,
+            };
+            if reach < r * 0.4 {
+                continue;
+            }
+            let spot = from + dir * reach;
+            let Some(floor) = world::map_ray(spot + Vec3::Y * 0.5, spot - Vec3::Y * (h + 8.0)) else { continue };
+            if (floor.y - gpos.y).abs() > 4.0 {
+                continue;
+            }
+            // prefer the key's own direction, then the farthest reach
+            let score = reach - k as f32 * 0.5;
+            if best.map(|(s, _)| score > s).unwrap_or(true) {
+                best = Some((score, floor));
+            }
+            break;
+        }
+        if best.map(|(s, _)| s >= r - 0.1).unwrap_or(false) {
+            break;
+        }
+    }
+    best.map(|(_, p)| p)
+}
+
 /// Region tier for a map tile (area, block, region) from region_tiers.map_areas.
 pub fn tier_for(area: u8, block: u8, region: u8) -> usize {
     for (i, t) in REGION_TIERS.iter().enumerate() {
@@ -122,6 +161,8 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, cam_pos: Vec3, cam_fwd: Vec3) 
     let me = v(&p.chr_ins.modules.physics.position);
     let mut w = WORLD.lock().unwrap();
 
+    static FRAMES: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+    let frame = FRAMES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     // 1. resolve containers around graces within 200 m
     let graces = w.graces.clone();
     let mut near = Vec::new();
@@ -138,23 +179,18 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, cam_pos: Vec3, cam_fwd: Vec3) 
                 if hash01(&key) > rule.chance {
                     continue;
                 }
-                if rule.respawn == "never" && st.saved.opened.contains(&key) {
+                // opened containers stay open: "never" ones for good, "on_rest" (ammo boxes) until the
+                // save is loaded again (state.rs drops them then); before, an ammo box reopened every frame
+                if st.saved.opened.contains(&key) {
                     continue;
                 }
                 let placed = w.placed.entry(key.clone()).or_insert(None);
-                if placed.is_none() {
+                // unplaced (area still streaming in, no room): retry about once a second per container
+                let retry = (frame + (hash01(&key) * 60.0) as u32) % 60 == 0;
+                if placed.is_none() && retry {
                     // walk out from the grace at chest height and stop short of walls, then find the floor
                     // just below: a drop from far above landed chests on cave ceilings and roofs
-                    let ang = hash01(&(key.clone() + "a")) * std::f32::consts::TAU;
-                    let r = rule.offset_m * (0.6 + 0.4 * hash01(&(key.clone() + "r")));
-                    let dir = Vec3::new(ang.cos(), 0.0, ang.sin());
-                    let from = gpos + Vec3::Y * 1.0;
-                    let reach = match world::map_ray(from, from + dir * r) {
-                        Some(wall) => (wall.distance(from) - 0.8).max(0.0),
-                        None => r,
-                    };
-                    let spot = from + dir * reach;
-                    *placed = world::map_ray(spot + Vec3::Y * 0.5, spot - Vec3::Y * 6.0).map(|at| at - gpos);
+                    *placed = place_near(gpos, &key, rule.offset_m).map(|at| at - gpos);
                     if let Some(off) = *placed {
                         crate::log!("loot: {} placed {:.1} m from grace {}", key, off.length(), g.id);
                     }

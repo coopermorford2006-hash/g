@@ -17,8 +17,10 @@ pub struct Body {
     pub driving: bool,
     pub saved_gravity: f32,
     pub sprinting: bool,
-    /// Where the controller put the character last frame (detects teleports by the game).
+    /// Where the controller put the character last frame, in Havok space and in block coordinates
+    /// (detects teleports by the game; Havok re-centring moves the first but not the second).
     pub last_pos: Option<Vec3>,
+    pub last_block: Option<Vec3>,
 }
 
 pub static BODY: Mutex<Body> = Mutex::new(Body {
@@ -29,6 +31,7 @@ pub static BODY: Mutex<Body> = Mutex::new(Body {
     saved_gravity: 1.0,
     sprinting: false,
     last_pos: None,
+    last_block: None,
 });
 
 /// Hands control back to Elden Ring (menus, riding, ladders, death, cutscenes).
@@ -39,6 +42,7 @@ pub fn release() {
     }
     b.driving = false;
     b.last_pos = None;
+    b.last_block = None;
     if let Some(p) = world::player() {
         let phys = &mut p.chr_ins.modules.physics;
         phys.gravity_multiplier = b.saved_gravity;
@@ -55,6 +59,7 @@ pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
     // with its gravity off, Elden Ring believes the character is airborne: it plays the falling pose
     // (the "floating" look) and its fall timer runs until it plays a fall death. Keep it grounded; the
     // controller applies Fortnite fall damage itself.
+    let block = Vec3::new(p.block_position.x, p.block_position.y, p.block_position.z);
     let air_time = p.chr_ins.modules.fall.fall_timer;
     p.chr_ins.modules.fall.fall_timer = 0.0;
     p.chr_ins.modules.fall.disable_fall_motion = true;
@@ -72,12 +77,17 @@ pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
 
     let mut pos = v(&phys.position);
     // the game moved the character itself (load screen, death warp, grace travel, cutscene): start over
-    if let Some(last) = b.last_pos {
-        if last.distance(pos) > 3.0 {
-            crate::log!("movement: teleported {:.1} m by the game; fall reset", last.distance(pos));
+    if let (Some(last), Some(last_block)) = (b.last_pos, b.last_block) {
+        if last_block.distance(block) > 3.0 {
+            crate::log!("movement: teleported {:.1} m by the game; fall reset", last_block.distance(block));
             b.vel = Vec3::ZERO;
             b.fall_start_y = pos.y;
             b.grounded = false;
+        } else if last.distance(pos) > 3.0 {
+            // Havok re-centred its origin (every ~32 m of travel): same place, new numbers. Keep the
+            // velocity (resetting it stopped the player dead each time) and move the fall height along.
+            let shift = (pos - last) - (block - last_block);
+            b.fall_start_y += shift.y;
         }
     }
     // input direction relative to the camera
@@ -169,6 +179,7 @@ pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
     }
 
     b.last_pos = Some(pos);
+    b.last_block = Some(block + (pos - v(&phys.position)));
     phys.position = world::hp(pos);
     phys.chr_proxy_pos_update_requested = true;
     // the character faces where the camera looks (Fortnite style)
