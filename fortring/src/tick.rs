@@ -14,6 +14,9 @@ pub struct Frame {
     pub cam: Option<(Vec3, Vec3, f32)>,
     /// Where the Fortnite character is drawn this frame: feet position and facing yaw.
     pub body: Option<(Vec3, f32)>,
+    /// The camera the outfit is drawn with (the mod's, or the game's during an interaction); never written
+    /// back to the game, unlike `cam`.
+    pub view: Option<(Vec3, Vec3, f32)>,
     pub driving: bool,
     pub started: Option<Instant>,
     pub last: Option<Instant>,
@@ -24,7 +27,7 @@ pub struct Frame {
     pub er_hold_until: f64,
 }
 
-pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0 });
+pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, view: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0 });
 
 /// True when Elden Ring itself should drive: a menu, map, dialogue, riding Torrent, a ladder, death.
 fn er_drives() -> bool {
@@ -72,6 +75,7 @@ pub fn gameplay() {
         input::MOD_OWNS_INPUT.store(false, std::sync::atomic::Ordering::Relaxed);
         fr.cam = None;
         fr.body = None;
+        fr.view = None;
         return;
     };
     let mut st = STATE.lock().unwrap();
@@ -92,7 +96,8 @@ pub fn gameplay() {
 
     // after an Elden Ring interaction (door, lever, grace, NPC, pickup) the game plays its own animation
     // and moves the character: let it drive for a moment instead of overwriting the position
-    let er = er_drives() || t < fr.er_hold_until;
+    let interacting = t < fr.er_hold_until && !er_drives();
+    let er = er_drives() || interacting;
     if let Some(fe) = world::fe_man() {
         if !er && fe.hud_state == CSFeManHudState::Default {
             fe.hud_state = CSFeManHudState::HideAll; // systems:hide_er_hud
@@ -121,6 +126,19 @@ pub fn gameplay() {
         st.pitch = 0.0;
         fr.cam = None;
         fr.body = None;
+        fr.view = None;
+        if interacting {
+            // Elden Ring animates the interaction (door, grace, pickup); keep its character hidden and
+            // draw the outfit where it is, seen through the game's own camera
+            p.chr_ins.chr_flags1c5.set_enable_render(false);
+            fr.body = Some((v(&p.chr_ins.modules.physics.position), st.yaw));
+            fr.view = world::camera().map(|c| {
+                let m = &c.pers_cam_1.matrix;
+                let aspect = if c.pers_cam_1.aspect_ratio > 0.1 { c.pers_cam_1.aspect_ratio } else { 16.0 / 9.0 };
+                let hfov = 2.0 * ((c.pers_cam_1.fov * 0.5).tan() * aspect).atan();
+                (Vec3::new(m.3.0, m.3.1, m.3.2), Vec3::new(m.2.0, m.2.1, m.2.2), hfov.to_degrees())
+            });
+        }
         health::tick(&mut st, &inp, dt, 0.0);
         return;
     }
@@ -138,6 +156,7 @@ pub fn gameplay() {
     let (cam_pos, cam_fwd, fov) = camera::pose(&st, head);
     fr.cam = Some((cam_pos, cam_fwd, fov));
     fr.body = Some((feet, st.yaw));
+    fr.view = fr.cam;
     crate::audio::set_listener(cam_pos);
 
     if st.mode == Mode::Build {

@@ -60,7 +60,7 @@ impl Hud {
 
     /// The Fortnite character at the player's feet (drawn under the HUD).
     fn draw_outfit(&mut self, display: [f32; 2]) {
-        let Some((cam, body)) = crate::tick::FRAME.lock().ok().and_then(|f| Some((f.cam?, f.body?))) else { return };
+        let Some((cam, body)) = crate::tick::FRAME.lock().ok().and_then(|f| Some((f.view?, f.body?))) else { return };
         if self.outfit.is_empty() {
             return;
         }
@@ -181,9 +181,7 @@ impl ImguiRenderLoop for Hud {
     fn render(&mut self, ui: &mut Ui) {
         let in_game = crate::tick::FRAME.lock().map(|f| f.cam.is_some()).unwrap_or(false);
         let display = ui.io().display_size;
-        if in_game {
-            self.draw_outfit(display);
-        }
+        self.draw_outfit(display);
         let dl = ui.get_foreground_draw_list();
         let Ok(st) = STATE.lock() else { return };
         match crate::assets::missing() {

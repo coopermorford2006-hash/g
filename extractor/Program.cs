@@ -258,6 +258,20 @@ public static class Program
         return null;
     }
 
+    /// A character part's MaterialOverrides (slot -> material), keyed by the part's mesh. The outfit's look
+    /// lives here: CID_883's body part puts M_Med_Jonesy_Redux over the generic body's default material.
+    static readonly Dictionary<UObject, Dictionary<int, FSoftObjectPath>> MaterialOverrides = new();
+
+    static void NoteOverrides(UObject part, UObject mesh)
+    {
+        if (!part.TryGetValue(out CUE4Parse.UE4.Assets.Objects.FStructFallback[] list, "MaterialOverrides")) return;
+        var map = new Dictionary<int, FSoftObjectPath>();
+        foreach (var o in list)
+            if (o.TryGetValue(out int index, "MaterialOverrideIndex") && o.TryGetValue(out FSoftObjectPath material, "OverrideMaterial") && !material.AssetPathName.IsNone)
+                map[index] = material;
+        if (map.Count > 0) MaterialOverrides[mesh] = map;
+    }
+
     static List<UObject> ResolveOutfit(IFileProvider provider, List<string> paths, string cid)
     {
         var path = paths.FirstOrDefault(p => Path.GetFileNameWithoutExtension(p).Equals(cid, StringComparison.OrdinalIgnoreCase));
@@ -271,13 +285,13 @@ public static class Program
         var parts = new List<UObject>();
         if (character.TryGetValue(out FSoftObjectPath[] baseParts, "BaseCharacterParts"))
             foreach (var p in baseParts)
-                if (p.TryLoad(out var part) && part.TryGetValue(out FSoftObjectPath mesh, "SkeletalMesh") && mesh.TryLoad(out var m)) parts.Add(m);
+                if (p.TryLoad(out var part) && part.TryGetValue(out FSoftObjectPath mesh, "SkeletalMesh") && mesh.TryLoad(out var m)) { parts.Add(m); NoteOverrides(part, m); }
         if (parts.Count == 0 && character.TryGetValue(out FSoftObjectPath hero, "HeroDefinition") && hero.TryLoad(out var heroDef)
             && heroDef.TryGetValue(out FSoftObjectPath[] specs, "Specializations"))
             foreach (var s in specs)
                 if (s.TryLoad(out var spec) && spec.TryGetValue(out FSoftObjectPath[] cps, "CharacterParts"))
                     foreach (var cp in cps)
-                        if (cp.TryLoad(out var part) && part.TryGetValue(out FSoftObjectPath mesh, "SkeletalMesh") && mesh.TryLoad(out var m)) parts.Add(m);
+                        if (cp.TryLoad(out var part) && part.TryGetValue(out FSoftObjectPath mesh, "SkeletalMesh") && mesh.TryLoad(out var m)) { parts.Add(m); NoteOverrides(part, m); }
         return parts;
     }
 
@@ -385,10 +399,19 @@ public static class Program
         };
         var map = new Dictionary<string, string>();
         var texDir = Path.GetFileNameWithoutExtension(target) + "_tex";
-        foreach (var slot in slots)
+        MaterialOverrides.TryGetValue(mesh, out var overrides);
+        for (var i = 0; i < slots.Length; i++)
         {
-            if (slot == null || !slot.TryLoad(out var loaded) || loaded is not CUE4Parse.UE4.Assets.Exports.Material.UMaterialInterface mat) continue;
-            if (map.ContainsKey(mat.Name)) continue;
+            var slot = slots[i];
+            if (slot == null || !slot.TryLoad(out var loaded) || loaded is not CUE4Parse.UE4.Assets.Exports.Material.UMaterialInterface slotMat) continue;
+            if (map.ContainsKey(slotMat.Name)) continue;
+            // the glTF keeps the slot's own material name; the texture comes from the outfit's override, if any
+            var mat = slotMat;
+            if (overrides != null && overrides.TryGetValue(i, out var ov) && ov.TryLoad(out var ovObj) && ovObj is CUE4Parse.UE4.Assets.Exports.Material.UMaterialInterface ovMat)
+            {
+                Log($"    slot {i} {slotMat.Name}: outfit override {ovMat.Name}");
+                mat = ovMat;
+            }
             var p = new CUE4Parse.UE4.Assets.Exports.Material.CMaterialParams2();
             mat.GetParams(p, CUE4Parse.UE4.Assets.Exports.Material.EMaterialDepth.AllLayers);
             if (!p.TryGetTexture2d(out var tex, CUE4Parse.UE4.Assets.Exports.Material.CMaterialParams2.Diffuse[0]) && !p.TryGetFirstTexture2d(out tex)) continue;
@@ -398,7 +421,7 @@ public static class Program
             var dst = Path.Combine(Path.GetDirectoryName(target)!, texDir, mat.Name + ".png");
             Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
             await File.WriteAllBytesAsync(dst, bitmap.Encode(ETextureFormat.Png, false, out _));
-            map[mat.Name] = rel;
+            map[slotMat.Name] = rel;
         }
         await File.WriteAllTextAsync(Path.ChangeExtension(target, ".materials.json"), JsonSerializer.Serialize(map, new JsonSerializerOptions { WriteIndented = true }));
         Log($"    {map.Count} material textures: {string.Join(", ", map.Keys)}");
