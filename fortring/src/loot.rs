@@ -29,7 +29,8 @@ pub struct Container {
 
 struct World {
     graces: Vec<Grace>,
-    /// key -> resolved Havok position (None = tile not loaded yet / no ground)
+    /// key -> offset from its grace (None = tile not loaded yet / no floor). Relative, because Havok
+    /// re-centres its origin as the player crosses map tiles (seen as ~33 m jumps of every position).
     placed: BTreeMap<String, Option<Vec3>>,
     pub near: Vec<Container>,
     blasts: Vec<(Vec3, f32, f32, f32, f32)>,
@@ -142,13 +143,24 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, cam_pos: Vec3, cam_fwd: Vec3) 
                 }
                 let placed = w.placed.entry(key.clone()).or_insert(None);
                 if placed.is_none() {
+                    // walk out from the grace at chest height and stop short of walls, then find the floor
+                    // just below: a drop from far above landed chests on cave ceilings and roofs
                     let ang = hash01(&(key.clone() + "a")) * std::f32::consts::TAU;
                     let r = rule.offset_m * (0.6 + 0.4 * hash01(&(key.clone() + "r")));
-                    let guess = gpos + Vec3::new(ang.cos() * r, 0.0, ang.sin() * r);
-                    *placed = world::ray(guess + Vec3::Y * 20.0, guess - Vec3::Y * 40.0);
+                    let dir = Vec3::new(ang.cos(), 0.0, ang.sin());
+                    let from = gpos + Vec3::Y * 1.0;
+                    let reach = match world::map_ray(from, from + dir * r) {
+                        Some(wall) => (wall.distance(from) - 0.8).max(0.0),
+                        None => r,
+                    };
+                    let spot = from + dir * reach;
+                    *placed = world::map_ray(spot + Vec3::Y * 0.5, spot - Vec3::Y * 6.0).map(|at| at - gpos);
+                    if let Some(off) = *placed {
+                        crate::log!("loot: {} placed {:.1} m from grace {}", key, off.length(), g.id);
+                    }
                 }
-                if let Some(pos) = *placed {
-                    near.push(Container { key, kind, pos, tier });
+                if let Some(off) = *placed {
+                    near.push(Container { key, kind, pos: gpos + off, tier });
                 }
             }
         }
@@ -161,6 +173,17 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, cam_pos: Vec3, cam_fwd: Vec3) 
             kept.push(c);
         }
     }
+    // for in-game testing: what is around, every 5 s
+    static LAST: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+    let mut last = LAST.lock().unwrap();
+    if last.map(|l| l.elapsed().as_secs() >= 5).unwrap_or(true) {
+        *last = Some(std::time::Instant::now());
+        let graces_here = graces.iter().filter_map(|g| to_havok(g.area, g.gx, g.gz, g.local)).map(|p| p.distance(me)).fold(f32::MAX, f32::min);
+        let nearest = kept.iter().map(|c| c.pos.distance(me)).fold(f32::MAX, f32::min);
+        let b = &p.chr_ins.block_id;
+        crate::log!("loot: map m{:02}_{:02}_{:02}, nearest grace {:.0} m, {} containers within 200 m, nearest {:.0} m", b.area(), b.block(), b.region(), graces_here, kept.len(), nearest);
+    }
+    drop(last);
     w.near = kept;
 
     // 2. interaction: the closest container or pickup in front of the player

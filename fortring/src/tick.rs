@@ -25,9 +25,11 @@ pub struct Frame {
     pub loaded_slot: Option<String>,
     /// Elden Ring drives until this time (seconds since boot), after an interaction.
     pub er_hold_until: f64,
+    /// Havok position minus block position of the player: changes only when Havok re-centres its origin.
+    pub havok_origin: Option<Vec3>,
 }
 
-pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, view: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0 });
+pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, view: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0, havok_origin: None });
 
 /// True when Elden Ring itself should drive: a menu, map, dialogue, riding Torrent, a ladder, death.
 fn er_drives() -> bool {
@@ -96,6 +98,23 @@ pub fn gameplay() {
 
     // after an Elden Ring interaction (door, lever, grace, NPC, pickup) the game plays its own animation
     // and moves the character: let it drive for a moment instead of overwriting the position
+    // Havok re-centres its origin as the player crosses map tiles (every position jumps ~33 m): move
+    // everything the mod keeps in Havok space along with it
+    let bp = &p.block_position;
+    let origin = v(&p.chr_ins.modules.physics.position) - Vec3::new(bp.x, bp.y, bp.z);
+    if let Some(prev) = fr.havok_origin {
+        let shift = origin - prev;
+        if shift.length() > 1.0 && shift.length() < 2000.0 {
+            let mv = |a: &mut [f32; 3]| { a[0] += shift.x; a[1] += shift.y; a[2] += shift.z; };
+            st.saved.builds.iter_mut().for_each(|b| mv(&mut b.pos));
+            st.pickups.iter_mut().for_each(|q| mv(&mut q.pos));
+            st.damage_numbers.iter_mut().for_each(|d| mv(&mut d.0));
+            st.tracers.iter_mut().for_each(|t| { mv(&mut t.0); mv(&mut t.1); });
+            crate::log!("world: Havok origin moved {shift:.1}; {} builds and {} pickups follow", st.saved.builds.len(), st.pickups.len());
+        }
+    }
+    fr.havok_origin = Some(origin);
+
     let interacting = t < fr.er_hold_until && !er_drives();
     let er = er_drives() || interacting;
     if let Some(fe) = world::fe_man() {
