@@ -544,7 +544,7 @@
   {
    "id": "anim_jog",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jog/NoWeapon/M_Jog_NoWep_N$  (AnimSequence on the Fortnite player skeleton, male medium)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jog/NoWeapon/M_Jog_NoWep_N_NoAdditive$  (AnimSequence on the Fortnite player skeleton, male medium; full pose, not an additive layer)",
    "out": "anim/anim_jog.psa",
    "required": true
   },
@@ -558,14 +558,14 @@
   {
    "id": "anim_jump",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jump/NoWep/JumpUp_NoWep_CMM_Additive$  (AnimSequence on the Fortnite player skeleton, male medium)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Falling/JumpToFalling$  (AnimSequence on the Fortnite player skeleton, male medium; full pose, not an additive layer)",
    "out": "anim/anim_jump.psa",
    "required": true
   },
   {
    "id": "anim_fall",
    "kind": "anim",
-   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jump/NoWep/JumpFall_NoWep_CMM_Additive$  (AnimSequence on the Fortnite player skeleton, male medium)",
+   "query": "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/InAir/NoWep_InAir_Fall_Loop_Lvl2$  (AnimSequence on the Fortnite player skeleton, male medium; full pose, not an additive layer)",
    "out": "anim/anim_fall.psa",
    "required": true
   },

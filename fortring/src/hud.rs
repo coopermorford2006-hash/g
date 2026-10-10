@@ -19,7 +19,22 @@ pub struct Hud {
     outfit: Vec<(crate::model::Mesh, Vec<u16>)>,
     model_tex: Vec<TextureId>,
     tris: Vec<crate::model::ScreenTri>,
+    /// Locomotion clips by name (anim_idle, anim_jog, ...), the one playing and its time.
+    clips: HashMap<&'static str, crate::anim::Clip>,
+    playing: &'static str,
+    anim_t: f32,
+    posed: (Vec<Vec3>, Vec<Vec3>),
 }
+
+/// The locomotion clips the outfit plays (sheets/fortnite_assets anim_* rows).
+const LOCOMOTION: [(&str, usize); 6] = [
+    ("anim_idle", FORTNITE_ASSETS_ANIM_IDLE),
+    ("anim_jog", FORTNITE_ASSETS_ANIM_JOG),
+    ("anim_sprint", FORTNITE_ASSETS_ANIM_SPRINT),
+    ("anim_fall", FORTNITE_ASSETS_ANIM_FALL),
+    ("anim_crouch_idle", FORTNITE_ASSETS_ANIM_CROUCH_IDLE),
+    ("anim_crouch_walk", FORTNITE_ASSETS_ANIM_CROUCH_WALK),
+];
 
 // The HUD lives on the render thread only; hudhook requires Send + Sync for the render loop.
 unsafe impl Send for Hud {}
@@ -56,6 +71,17 @@ impl Hud {
         if self.outfit.is_empty() {
             crate::log!("model: no outfit at {}", first.display());
         }
+        for (name, row) in LOCOMOTION {
+            let path = crate::paths::cache_dir().join(FORTNITE_ASSETS[row].out);
+            match crate::anim::load(&path) {
+                Some(c) => {
+                    let matched = self.outfit.first().map(|(m, _)| m.nodes.iter().filter(|n| c.by_name.contains_key(&n.name)).count()).unwrap_or(0);
+                    crate::log!("anim: {name} {} bones ({matched} match the outfit), {} frames at {} fps", c.bones.len(), c.frames, c.fps);
+                    self.clips.insert(name, c);
+                }
+                None => crate::log!("anim: {name} missing at {}", path.display()),
+            }
+        }
     }
 
     /// The Fortnite character at the player's feet (drawn under the HUD).
@@ -65,9 +91,37 @@ impl Hud {
             return;
         }
         let view = crate::model::View::new(cam.0, cam.1, cam.2, display);
+        // locomotion: pick the clip from what the controller is doing, advance its time
+        let (speed, grounded, sprinting) = crate::movement::speed_now();
+        let crouched = STATE.lock().map(|s| s.crouched).unwrap_or(false);
+        let want = if !grounded {
+            "anim_fall"
+        } else if speed > 0.3 {
+            if crouched { "anim_crouch_walk" } else if sprinting { "anim_sprint" } else { "anim_jog" }
+        } else if crouched {
+            "anim_crouch_idle"
+        } else {
+            "anim_idle"
+        };
+        let want = if self.clips.contains_key(want) { want } else { "anim_idle" };
+        if want != self.playing {
+            self.playing = want;
+            self.anim_t = 0.0;
+        }
+        let dt = unsafe { (*hudhook::imgui::sys::igGetIO()).DeltaTime }.clamp(0.0, 0.1);
+        // jog/sprint cycles play faster or slower with the actual speed
+        let rate = match want {
+            "anim_jog" => (speed / MOVEMENT_RUN_SPEED_V).clamp(0.5, 1.5),
+            "anim_sprint" => (speed / MOVEMENT_SPRINT_SPEED_V).clamp(0.5, 1.5),
+            _ => 1.0,
+        };
+        self.anim_t += dt * rate;
+        let clip = self.clips.get(self.playing).map(|c| (c, self.anim_t));
         self.tris.clear();
+        let (pos, nrm) = &mut self.posed;
         for (mesh, slots) in &self.outfit {
-            crate::model::emit(mesh, body.0, body.1 + MODEL_YAW_OFFSET, &view, slots, &mut self.tris);
+            crate::model::pose(mesh, clip, pos, nrm);
+            crate::model::emit(mesh, pos, nrm, body.0, body.1 + MODEL_YAW_OFFSET, &view, slots, &mut self.tris);
         }
         self.tris.sort_unstable_by(|a, b| b.depth.total_cmp(&a.depth));
         use hudhook::imgui::sys;
@@ -105,7 +159,17 @@ impl Hud {
     }
 
     pub fn new() -> Self {
-        Hud { tex: HashMap::new(), big_font: None, outfit: Vec::new(), model_tex: Vec::new(), tris: Vec::new() }
+        Hud {
+            tex: HashMap::new(),
+            big_font: None,
+            outfit: Vec::new(),
+            model_tex: Vec::new(),
+            tris: Vec::new(),
+            clips: HashMap::new(),
+            playing: "anim_idle",
+            anim_t: 0.0,
+            posed: (Vec::new(), Vec::new()),
+        }
     }
 }
 

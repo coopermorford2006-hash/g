@@ -12,6 +12,7 @@ mod hook;
 mod hud;
 mod input;
 mod log;
+mod anim;
 mod model;
 mod loot;
 mod movement;
