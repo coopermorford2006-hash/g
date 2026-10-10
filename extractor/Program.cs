@@ -318,7 +318,11 @@ public static class Program
                 var file = results.SelectMany(r => r.DiskFilePaths ?? []).FirstOrDefault(f => f.EndsWith(kind == "anim" ? ".psa" : ".glb", StringComparison.OrdinalIgnoreCase))
                            ?? throw new InvalidDataException($"exporter wrote no {(kind == "anim" ? "psa" : "glb")}: {string.Join(", ", results.Select(r => r.Error?.Message))}");
                 File.Copy(file, target, true);
-                if (kind != "anim") KeepTextures(file, target, results.SelectMany(r => r.DiskFilePaths ?? []));
+                if (kind != "anim")
+                {
+                    KeepTextures(file, target, results.SelectMany(r => r.DiskFilePaths ?? []));
+                    await ExportMaterialTextures(obj, target);
+                }
                 try { Directory.Delete(tmp, true); } catch { }
                 break;
         }
@@ -356,6 +360,38 @@ public static class Program
         w.Write((uint)padded); w.Write(0x4E4F534Au); // "JSON"
         w.Write(newJson); for (var i = newJson.Length; i < padded; i++) w.Write((byte)' ');
         w.Write(rest);
+    }
+
+    /// The glTF exporter names each material but links no textures. Writes each material's base colour
+    /// texture to "<mesh>_tex/<material>.png" and "<mesh>.materials.json" (glTF material name -> png path
+    /// relative to the mesh), which the DLL's renderer reads.
+    static async Task ExportMaterialTextures(UObject mesh, string target)
+    {
+        var slots = mesh switch
+        {
+            CUE4Parse.UE4.Assets.Exports.Engine.USkinnedAsset sk => sk.SkeletalMaterials?.Select(m => m.MaterialInterface).ToArray() ?? [],
+            CUE4Parse.UE4.Assets.Exports.StaticMesh.UStaticMesh sm => sm.StaticMaterials.Select(m => m.MaterialInterface).ToArray(),
+            _ => [],
+        };
+        var map = new Dictionary<string, string>();
+        var texDir = Path.GetFileNameWithoutExtension(target) + "_tex";
+        foreach (var slot in slots)
+        {
+            if (slot == null || !slot.TryLoad(out var loaded) || loaded is not CUE4Parse.UE4.Assets.Exports.Material.UMaterialInterface mat) continue;
+            if (map.ContainsKey(mat.Name)) continue;
+            var p = new CUE4Parse.UE4.Assets.Exports.Material.CMaterialParams2();
+            mat.GetParams(p, CUE4Parse.UE4.Assets.Exports.Material.EMaterialDepth.AllLayers);
+            if (!p.TryGetTexture2d(out var tex, CUE4Parse.UE4.Assets.Exports.Material.CMaterialParams2.Diffuse[0]) && !p.TryGetFirstTexture2d(out tex)) continue;
+            var bitmap = tex?.Decode(2048);
+            if (bitmap == null) continue;
+            var rel = texDir + "/" + mat.Name + ".png";
+            var dst = Path.Combine(Path.GetDirectoryName(target)!, texDir, mat.Name + ".png");
+            Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+            await File.WriteAllBytesAsync(dst, bitmap.Encode(ETextureFormat.Png, false, out _));
+            map[mat.Name] = rel;
+        }
+        await File.WriteAllTextAsync(Path.ChangeExtension(target, ".materials.json"), JsonSerializer.Serialize(map, new JsonSerializerOptions { WriteIndented = true }));
+        Log($"    {map.Count} material textures: {string.Join(", ", map.Keys)}");
     }
 
     /// vgmstream-cli (Wwise/Bink/ADPCM to WAV) from its official release, kept with the other downloaded tools.

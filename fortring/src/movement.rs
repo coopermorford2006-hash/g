@@ -17,6 +17,8 @@ pub struct Body {
     pub driving: bool,
     pub saved_gravity: f32,
     pub sprinting: bool,
+    /// Where the controller put the character last frame (detects teleports by the game).
+    pub last_pos: Option<Vec3>,
 }
 
 pub static BODY: Mutex<Body> = Mutex::new(Body {
@@ -26,6 +28,7 @@ pub static BODY: Mutex<Body> = Mutex::new(Body {
     driving: false,
     saved_gravity: 1.0,
     sprinting: false,
+    last_pos: None,
 });
 
 /// Hands control back to Elden Ring (menus, riding, ladders, death, cutscenes).
@@ -35,6 +38,7 @@ pub fn release() {
         return;
     }
     b.driving = false;
+    b.last_pos = None;
     if let Some(p) = world::player() {
         let phys = &mut p.chr_ins.modules.physics;
         phys.gravity_multiplier = b.saved_gravity;
@@ -67,6 +71,15 @@ pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
     phys.gravity_disabled = true;
 
     let mut pos = v(&phys.position);
+    // the game moved the character itself (load screen, death warp, grace travel, cutscene): start over
+    if let Some(last) = b.last_pos {
+        if last.distance(pos) > 3.0 {
+            crate::log!("movement: teleported {:.1} m by the game; fall reset", last.distance(pos));
+            b.vel = Vec3::ZERO;
+            b.fall_start_y = pos.y;
+            b.grounded = false;
+        }
+    }
     // input direction relative to the camera
     let mut wish = Vec3::ZERO;
     if inp.down(CONTROLS_MOVE_FWD) { wish += flat_forward(st.yaw); }
@@ -93,7 +106,13 @@ pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
         st.crouched = false;
         b.fall_start_y = pos.y;
     }
-    if !b.grounded {
+    // no collision loaded anywhere below (the area is still streaming in): hold still instead of
+    // falling through the unloaded world and taking a lethal "fall" when it appears (died at 46.7 m)
+    let world_below = b.grounded || world::map_ray(pos + Vec3::Y * 0.5, pos - Vec3::Y * 200.0).is_some();
+    if !world_below {
+        b.vel = Vec3::ZERO;
+        b.fall_start_y = pos.y;
+    } else if !b.grounded {
         b.vel.y = (b.vel.y - MOVEMENT_GRAVITY_V * dt).max(-MOVEMENT_TERMINAL_VELOCITY_V);
     }
 
@@ -149,6 +168,7 @@ pub fn step(st: &mut State, inp: &Frame, dt: f32) -> f32 {
         }
     }
 
+    b.last_pos = Some(pos);
     phys.position = world::hp(pos);
     phys.chr_proxy_pos_update_requested = true;
     // the character faces where the camera looks (Fortnite style)

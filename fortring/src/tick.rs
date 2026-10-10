@@ -12,6 +12,8 @@ use std::time::Instant;
 
 pub struct Frame {
     pub cam: Option<(Vec3, Vec3, f32)>,
+    /// Where the Fortnite character is drawn this frame: feet position and facing yaw.
+    pub body: Option<(Vec3, f32)>,
     pub driving: bool,
     pub started: Option<Instant>,
     pub last: Option<Instant>,
@@ -22,7 +24,7 @@ pub struct Frame {
     pub er_hold_until: f64,
 }
 
-pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0 });
+pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0 });
 
 /// True when Elden Ring itself should drive: a menu, map, dialogue, riding Torrent, a ladder, death.
 fn er_drives() -> bool {
@@ -69,6 +71,7 @@ pub fn gameplay() {
     let Some(p) = world::player() else {
         input::MOD_OWNS_INPUT.store(false, std::sync::atomic::Ordering::Relaxed);
         fr.cam = None;
+        fr.body = None;
         return;
     };
     let mut st = STATE.lock().unwrap();
@@ -116,6 +119,7 @@ pub fn gameplay() {
         st.yaw = 2.0 * q.1.atan2(q.3);
         st.pitch = 0.0;
         fr.cam = None;
+        fr.body = None;
         health::tick(&mut st, &inp, dt, 0.0);
         return;
     }
@@ -130,6 +134,7 @@ pub fn gameplay() {
     let head = feet + Vec3::Y * MOVEMENT_CAPSULE_HEIGHT_V * if st.crouched { 0.7 } else { 0.95 };
     let (cam_pos, cam_fwd, fov) = camera::pose(&st, head);
     fr.cam = Some((cam_pos, cam_fwd, fov));
+    fr.body = Some((feet, st.yaw));
     crate::audio::set_listener(cam_pos);
 
     if st.mode == Mode::Build {

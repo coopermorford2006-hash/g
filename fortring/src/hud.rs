@@ -8,9 +8,17 @@ use hudhook::imgui::{self, Context, FontSource, ImColor32, TextureId, Ui};
 use hudhook::{ImguiRenderLoop, RenderContext};
 use std::collections::HashMap;
 
+/// Added to the player's yaw when drawing the outfit: the exported models face -Z (checked with
+/// model::tests::preview_outfit), the movement code faces +Z at yaw 0.
+const MODEL_YAW_OFFSET: f32 = std::f32::consts::PI;
+
 pub struct Hud {
     tex: HashMap<usize, (TextureId, [f32; 2])>,
     big_font: Option<imgui::FontId>,
+    /// The Fortnite outfit (every part), each with its material slot -> model_tex index table.
+    outfit: Vec<(crate::model::Mesh, Vec<u16>)>,
+    model_tex: Vec<TextureId>,
+    tris: Vec<crate::model::ScreenTri>,
 }
 
 // The HUD lives on the render thread only; hudhook requires Send + Sync for the render loop.
@@ -18,13 +26,94 @@ unsafe impl Send for Hud {}
 unsafe impl Sync for Hud {}
 
 impl Hud {
+    /// outfit.glb, outfit_1.glb, ... (the outfit's parts) and their material textures.
+    fn load_outfit(&mut self, rc: &mut dyn RenderContext) {
+        let first = crate::paths::cache_dir().join(FORTNITE_ASSETS[FORTNITE_ASSETS_OUTFIT].out);
+        let mut loaded: HashMap<std::path::PathBuf, u16> = HashMap::new();
+        for i in 0.. {
+            let path = if i == 0 { first.clone() } else { first.with_file_name(format!("{}_{i}.glb", first.file_stem().unwrap().to_string_lossy())) };
+            let Some(mesh) = crate::model::load(&path) else { break };
+            let mut slots = Vec::new();
+            for name in &mesh.materials {
+                let slot = mesh.textures.get(name).and_then(|png| {
+                    if let Some(&s) = loaded.get(png) {
+                        return Some(s);
+                    }
+                    let (rgba, w, h) = load_png_file(png)?;
+                    let id = rc.load_texture(&rgba, w, h).ok()?;
+                    self.model_tex.push(id);
+                    let s = (self.model_tex.len() - 1) as u16;
+                    loaded.insert(png.clone(), s);
+                    Some(s)
+                });
+                slots.push(slot.unwrap_or(u16::MAX));
+            }
+            let (lo, hi) = crate::model::bounds(&mesh);
+            crate::log!("model: {} - {} vertices, {} triangles, materials {:?} -> textures {:?}, bounds {lo:.2}..{hi:.2}",
+                path.file_name().unwrap().to_string_lossy(), mesh.pos.len(), mesh.tris.len(), mesh.materials, slots);
+            self.outfit.push((mesh, slots));
+        }
+        if self.outfit.is_empty() {
+            crate::log!("model: no outfit at {}", first.display());
+        }
+    }
+
+    /// The Fortnite character at the player's feet (drawn under the HUD).
+    fn draw_outfit(&mut self, display: [f32; 2]) {
+        let Some((cam, body)) = crate::tick::FRAME.lock().ok().and_then(|f| Some((f.cam?, f.body?))) else { return };
+        if self.outfit.is_empty() {
+            return;
+        }
+        let view = crate::model::View::new(cam.0, cam.1, cam.2, display);
+        self.tris.clear();
+        for (mesh, slots) in &self.outfit {
+            crate::model::emit(mesh, body.0, body.1 + MODEL_YAW_OFFSET, &view, slots, &mut self.tris);
+        }
+        self.tris.sort_unstable_by(|a, b| b.depth.total_cmp(&a.depth));
+        use hudhook::imgui::sys;
+        let v2 = |p: [f32; 2]| sys::ImVec2 { x: p[0], y: p[1] };
+        unsafe {
+            let dl = sys::igGetForegroundDrawList();
+            let mut current: Option<u16> = None;
+            for t in &self.tris {
+                let g = t.shade as u32;
+                if t.tex == u16::MAX {
+                    if current.take().is_some() {
+                        sys::ImDrawList_PopTextureID(dl);
+                    }
+                    let c = 0xFF00_0000 | (g * 200 / 255) << 16 | (g * 200 / 255) << 8 | (g * 200 / 255);
+                    sys::ImDrawList_AddTriangleFilled(dl, v2(t.p[0]), v2(t.p[1]), v2(t.p[2]), c);
+                    continue;
+                }
+                if current != Some(t.tex) {
+                    if current.is_some() {
+                        sys::ImDrawList_PopTextureID(dl);
+                    }
+                    sys::ImDrawList_PushTextureID(dl, self.model_tex[t.tex as usize].id() as sys::ImTextureID);
+                    current = Some(t.tex);
+                }
+                let c = 0xFF00_0000 | g << 16 | g << 8 | g;
+                sys::ImDrawList_PrimReserve(dl, 3, 3);
+                for k in 0..3 {
+                    sys::ImDrawList_PrimVtx(dl, v2(t.p[k]), v2(t.uv[k]), c);
+                }
+            }
+            if current.is_some() {
+                sys::ImDrawList_PopTextureID(dl);
+            }
+        }
+    }
+
     pub fn new() -> Self {
-        Hud { tex: HashMap::new(), big_font: None }
+        Hud { tex: HashMap::new(), big_font: None, outfit: Vec::new(), model_tex: Vec::new(), tris: Vec::new() }
     }
 }
 
 fn load_png(asset: usize) -> Option<(Vec<u8>, u32, u32)> {
-    let path = crate::paths::cache_dir().join(FORTNITE_ASSETS[asset].out);
+    load_png_file(&crate::paths::cache_dir().join(FORTNITE_ASSETS[asset].out))
+}
+
+fn load_png_file(path: &std::path::Path) -> Option<(Vec<u8>, u32, u32)> {
     let file = std::fs::File::open(path).ok()?;
     let mut dec = png::Decoder::new(std::io::BufReader::new(file));
     dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
@@ -75,6 +164,7 @@ impl ImguiRenderLoop for Hud {
             }
         }
         crate::log!("hud: {} Fortnite textures loaded", self.tex.len());
+        self.load_outfit(rc);
         let font = crate::paths::cache_dir().join(FORTNITE_ASSETS[FORTNITE_ASSETS_FONT_BURBANK].out);
         // ImGui asserts (and the game aborts) on bytes stb_truetype can't parse: only hand it a real sfnt
         let is_sfnt = |b: &[u8]| matches!(b.get(..4), Some([0, 1, 0, 0]) | Some(b"OTTO") | Some(b"true") | Some(b"ttcf"));
@@ -91,6 +181,9 @@ impl ImguiRenderLoop for Hud {
     fn render(&mut self, ui: &mut Ui) {
         let in_game = crate::tick::FRAME.lock().map(|f| f.cam.is_some()).unwrap_or(false);
         let display = ui.io().display_size;
+        if in_game {
+            self.draw_outfit(display);
+        }
         let dl = ui.get_foreground_draw_list();
         let Ok(st) = STATE.lock() else { return };
         match crate::assets::missing() {
@@ -277,4 +370,9 @@ impl ImguiRenderLoop for Hud {
             }
         }
     }
+}
+
+#[cfg(test)]
+pub fn load_png_file_for_test(path: &std::path::Path) -> Option<(Vec<u8>, u32, u32)> {
+    load_png_file(path)
 }
