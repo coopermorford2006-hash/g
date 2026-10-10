@@ -183,7 +183,8 @@ pub fn emit(mesh: &Mesh, at: Vec3, yaw: f32, view: &View, tex_slot: &[u16], out:
             continue;
         }
         let n = rot * (mesh.nrm[tri[0] as usize] + mesh.nrm[tri[1] as usize] + mesh.nrm[tri[2] as usize]).normalize_or_zero();
-        let shade = (0.55 + 0.45 * n.dot(light).max(0.0)).clamp(0.0, 1.0);
+        // dimmer than full white: Elden Ring's interiors are dark and a fully lit model looks pasted on
+        let shade = (0.32 + 0.48 * n.dot(light).max(0.0)).clamp(0.0, 1.0);
         let uv = |i: u32| { let u = mesh.uv[i as usize]; [u.x, u.y] };
         out.push(ScreenTri {
             depth: (a.1 + b.1 + c.1) / 3.0,
@@ -207,7 +208,7 @@ mod tests {
     fn preview_outfit() {
         let dir = crate::paths::cache_dir().join("skeletal_mesh");
         let out = std::env::var("FORTRING_PREVIEW").map(std::path::PathBuf::from).unwrap_or_else(|_| std::env::temp_dir());
-        let parts: Vec<Mesh> = ["outfit.glb", "outfit_1.glb"].iter().filter_map(|f| load(&dir.join(f))).collect();
+        let parts: Vec<Mesh> = (0..).map_while(|i| load(&dir.join(if i == 0 { "outfit.glb".to_string() } else { format!("outfit_{i}.glb") }))).collect();
         assert!(!parts.is_empty(), "no outfit in {}", dir.display());
         let mut textures: Vec<(Vec<u8>, u32, u32)> = Vec::new();
         let mut slots: Vec<Vec<u16>> = Vec::new();

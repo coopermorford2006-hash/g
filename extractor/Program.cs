@@ -17,6 +17,7 @@ using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
 using CUE4Parse.MappingsProvider.Usmap;
 using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.IO;
 using CUE4Parse.UE4.Assets.Exports.Sound;
 using CUE4Parse.UE4.Assets.Exports.Texture;
 using CUE4Parse.UE4.Objects.Core.Misc;
@@ -118,6 +119,15 @@ public static class Program
 
         var provider = new DefaultFileProvider(paks, SearchOption.TopDirectoryOnly, true, new VersionContainer(EGame.GAME_UE5_LATEST));
         provider.MappingsContainer = new FileUsmapTypeMappingsProvider(mapFile);
+        // Fortnite installs only the low mips of most textures (64 px) and few cosmetics: the rest streams on
+        // demand (global.uondemandtoc) from Epic's public download CDN, the same one the game and FModel use
+        var chunks = Directory.CreateDirectory(Path.Combine(tools, "chunks"));
+        provider.OnDemandOptions = new IoStoreOnDemandOptions
+        {
+            ChunkHostUri = new Uri("https://egdownload.fastly-edge.com/", UriKind.Absolute),
+            ChunkCacheDirectory = chunks,
+            Timeout = TimeSpan.FromSeconds(30),
+        };
         provider.Initialize();
         var keys = new Dictionary<FGuid, FAesKey> { [new FGuid()] = new FAesKey(aes.GetProperty("mainKey").GetString()!) };
         foreach (var dk in aes.GetProperty("dynamicKeys").EnumerateArray())

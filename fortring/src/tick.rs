@@ -113,6 +113,7 @@ pub fn gameplay() {
         if fr.driving {
             movement::release();
             fr.driving = false;
+            p.chr_ins.chr_flags1c5.set_enable_render(true);
         }
         // keep our yaw following the character so control resumes facing the same way
         let q = &p.chr_ins.modules.physics.orientation;
@@ -124,6 +125,8 @@ pub fn gameplay() {
         return;
     }
     fr.driving = true;
+    // the Fortnite outfit is drawn in its place (hud::draw_outfit); the game may set this back each frame
+    p.chr_ins.chr_flags1c5.set_enable_render(false);
 
     camera::look(&mut st, inp.dx, inp.dy);
     let fall = movement::step(&mut st, &inp, dt);
