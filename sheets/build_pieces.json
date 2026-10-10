@@ -8,7 +8,7 @@
   "hp_column": "materials column holding its HP",
   "size_m": "[x, y, z] extent in metres",
   "pitch_deg": "tilt of the collision box (ramp: atan(3.84/5.12) = 36.87)",
-  "pivot": "placement rule: wall_edge | floor_cell | ramp_cell",
+  "pivot": "placement rule: wall_edge | floor_cell | ramp_cell | cone_cell",
   "collision_asset": "Elden Ring asset spawned so enemies collide with it, or none (0.1: none, see about)",
   "collision_base_size_m": "[x,y,z] native size of that asset, for scaling ([0,0,0] when none)",
   "fn_mesh_wood": "@fortnite_assets row",
@@ -81,8 +81,34 @@
    "fn_mesh_stone": "@fortnite_assets:mesh_ramp_stone",
    "fn_mesh_metal": "@fortnite_assets:mesh_ramp_metal",
    "pitch_deg": 36.87
+  },
+  {
+   "id": "cone",
+   "name": "Cone",
+   "key": "@controls:build_cone",
+   "hp_column": "floor_hp",
+   "size_m": [
+    5.12,
+    5.12,
+    1.92
+   ],
+   "pitch_deg": 0.0,
+   "pivot": "cone_cell",
+   "collision_asset": "none",
+   "collision_base_size_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "fn_mesh_wood": "@fortnite_assets:mesh_cone_wood",
+   "fn_mesh_stone": "@fortnite_assets:mesh_cone_stone",
+   "fn_mesh_metal": "@fortnite_assets:mesh_cone_metal"
   }
  ],
- "_unverified": {},
- "_unverified_note": "Ramp collision is a 6.4 m slab (the slope length of a 5.12 x 3.84 cell) tilted 36.87 degrees."
+ "_unverified": {
+  "cone": [
+   "size_m"
+  ]
+ },
+ "_unverified_note": "Ramp collision is a 6.4 m slab (the slope length of a 5.12 x 3.84 cell) tilted 36.87 degrees. The cone's collision is a 1.92 m tall box over its cell (a pyramid in Fortnite)."
 }

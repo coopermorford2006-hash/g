@@ -25,6 +25,8 @@ pub struct Frame {
     pub loaded_slot: Option<String>,
     /// Elden Ring drives until this time (seconds since boot), after an interaction.
     pub er_hold_until: f64,
+    /// Frames left to hold Elden Ring's interact key: a scroll notch lasts one frame, too short for the game.
+    pub interact_frames: u32,
     /// Havok position minus block position of the player: changes only when Havok re-centres its origin.
     pub havok_origin: Option<Vec3>,
     /// Camera height smoothing on steps and uneven ground: the camera lags the feet by this much (m),
@@ -33,7 +35,7 @@ pub struct Frame {
     pub last_feet_y: Option<f32>,
 }
 
-pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, view: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0, havok_origin: None, cam_lag_y: 0.0, last_feet_y: None });
+pub static FRAME: Mutex<Frame> = Mutex::new(Frame { cam: None, body: None, view: None, driving: false, started: None, last: None, last_save: 0.0, ui_seen: [false; 0x46], loaded_slot: None, er_hold_until: 0.0, interact_frames: 0, havok_origin: None, cam_lag_y: 0.0, last_feet_y: None });
 
 /// True when Elden Ring itself should drive: a menu, map, dialogue, riding Torrent, a ladder, death.
 fn er_drives() -> bool {
@@ -130,15 +132,18 @@ pub fn gameplay() {
     // ...except interact while the mod shows its own prompt (chest, ammo box, pickup): that E is the mod's
     let mod_prompt = st.prompt.is_some();
     for (c, row) in CONTROLS.iter().enumerate() {
-        if row.er_key != "none" && row.owner != "mod" {
-            let mine = c == CONTROLS_INTERACT && mod_prompt;
-            input::passthrough(row, !er && !mine && inp.down(c));
+        if row.er_key != "none" && row.owner != "mod" && c != CONTROLS_INTERACT {
+            input::passthrough(row, !er && inp.down(c));
         }
     }
     if !er && !mod_prompt && inp.pressed(CONTROLS_INTERACT) {
+        fr.interact_frames = 4;
         fr.er_hold_until = t + 2.5;
         crate::log!("input: interact passed to Elden Ring; it drives for 2.5 s");
     }
+    // held across the hand-over: Elden Ring is driving by the next frame and still needs to see the key
+    input::passthrough(&CONTROLS[CONTROLS_INTERACT], fr.interact_frames > 0);
+    fr.interact_frames = fr.interact_frames.saturating_sub(1);
     if er {
         if fr.driving {
             movement::release();

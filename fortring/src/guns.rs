@@ -307,19 +307,25 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, muzzle: Vec3, cam_pos: Vec3, c
     st.fire_cooldown = (st.fire_cooldown - dt).max(0.0);
     st.hit_marker = (st.hit_marker - dt).max(0.0);
     for (i, c) in [CONTROLS_SLOT1, CONTROLS_SLOT2, CONTROLS_SLOT3, CONTROLS_SLOT4, CONTROLS_SLOT5].into_iter().enumerate() {
-        if inp.pressed(c) && st.saved.slots[i].is_some() {
+        if inp.pressed(c) && (st.saved.slots[i].is_some() || st.saved.heal_slots[i].is_some()) {
             st.held = Held::Slot(i);
             st.reload_left = 0.0;
+            st.mode = crate::state::Mode::Combat; // a weapon key leaves build mode
         }
     }
     if inp.pressed(CONTROLS_PICKAXE) {
         st.held = Held::Pickaxe;
         st.reload_left = 0.0;
+        st.mode = crate::state::Mode::Combat;
     }
     let aiming = inp.down(CONTROLS_AIM) && st.held_gun().is_some() && st.reload_left <= 0.0;
     let blend = dt / CAMERA_ADS_BLEND_S_V.max(0.01);
     st.ads = if aiming { (st.ads + blend).min(1.0) } else { (st.ads - blend).max(0.0) };
 
+    // a heal in hand: health.rs uses it on fire
+    if st.held_heal().is_some() {
+        return;
+    }
     let Some(gun) = st.held_gun() else {
         // pickaxe: Fortnite swing (harvest is handled in harvest.rs); also hits enemies
         let pick = &PICKAXE[PICKAXE_DEFAULT];

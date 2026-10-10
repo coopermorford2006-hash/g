@@ -63,16 +63,15 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, fall_damage_pts: f32) {
                 st.progress = None;
             }
         }
-    } else if inp.pressed(CONTROLS_HEAL_ITEM) {
-        let c = st.selected_consumable;
-        if st.saved.consumables[c] > 0 && can_use(st, c, data.hp, max) {
-            st.using = Some(c);
-            st.use_left = CONSUMABLES[c].use_s;
-            crate::audio::play(CONSUMABLES[c].fn_use_sound, None);
-        } else if st.saved.consumables[c] == 0 {
-            // cycle to the next consumable the player has
-            if let Some(n) = (1..=CONSUMABLES.len()).map(|i| (c + i) % CONSUMABLES.len()).find(|&i| st.saved.consumables[i] > 0) {
-                st.selected_consumable = n;
+    } else if let Some((c, n)) = st.held_heal() {
+        // Fortnite: select the heal in the hotbar and fire to use it
+        if inp.pressed(CONTROLS_FIRE) && st.mode == crate::state::Mode::Combat && n > 0 {
+            if can_use(st, c, data.hp, max) {
+                st.using = Some(c);
+                st.use_left = CONSUMABLES[c].use_s;
+                crate::audio::play(CONSUMABLES[c].fn_use_sound, None);
+            } else {
+                st.message(match CONSUMABLES[c].restores { "health" => "Health is full", _ => "Shield is full" });
             }
         }
     }
@@ -89,7 +88,14 @@ fn can_use(st: &State, c: usize, hp: i32, max: i32) -> bool {
 
 fn apply(st: &mut State, c: usize, hp: &mut i32, max: i32) {
     let row = &CONSUMABLES[c];
-    st.saved.consumables[c] -= 1;
+    // one from the held stack; an empty slot frees up
+    if let crate::state::Held::Slot(s) = st.held {
+        if let Some((k, n)) = st.saved.heal_slots[s] {
+            if k == c {
+                st.saved.heal_slots[s] = if n > 1 { Some((k, n - 1)) } else { None };
+            }
+        }
+    }
     st.dirty = true;
     match row.restores {
         "health" => {

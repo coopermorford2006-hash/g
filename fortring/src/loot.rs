@@ -25,6 +25,8 @@ pub struct Container {
     pub kind: usize,
     pub pos: Vec3,
     pub tier: usize,
+    /// The camera sees it past terrain this frame.
+    pub visible: bool,
 }
 
 struct World {
@@ -196,7 +198,7 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, cam_pos: Vec3, cam_fwd: Vec3) 
                     }
                 }
                 if let Some(off) = *placed {
-                    near.push(Container { key, kind, pos: gpos + off, tier });
+                    near.push(Container { key, kind, pos: gpos + off, tier, visible: false });
                 }
             }
         }
@@ -209,6 +211,12 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, cam_pos: Vec3, cam_fwd: Vec3) 
             kept.push(c);
         }
     }
+    for c in kept.iter_mut() {
+        c.visible = c.pos.distance(cam_pos) < 90.0 && world::visible(cam_pos, &[c.pos + Vec3::Y * 0.35, c.pos + Vec3::Y * 0.8]);
+    }
+    st.pickup_visible = st.pickups.iter()
+        .map(|q| { let at = Vec3::from(q.pos); at.distance(cam_pos) < 45.0 && world::visible(cam_pos, &[at + Vec3::Y * 0.3]) })
+        .collect();
     // for in-game testing: what is around, every 5 s
     static LAST: Mutex<Option<std::time::Instant>> = Mutex::new(None);
     let mut last = LAST.lock().unwrap();
@@ -231,7 +239,8 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, cam_pos: Vec3, cam_fwd: Vec3) 
         let row = &CONTAINERS[c.kind];
         st.prompt = Some(format!("[E] {}", row.name));
         st.prompt_color = [1.0, 0.85, 0.3, 1.0];
-        if inp.down(CONTROLS_INTERACT) {
+        let searching = matches!(&w.search, Some((k, _)) if *k == c.key);
+        if inp.pressed(CONTROLS_INTERACT) || searching {
             let t = match &w.search { Some((k, t)) if *k == c.key => t + dt, _ => dt };
             w.search = Some((c.key.clone(), t));
             st.progress = Some(("Searching".into(), (t / row.open_s).min(1.0)));
@@ -359,7 +368,7 @@ fn pickups(st: &mut State, inp: &Frame, me: Vec3, looking: &dyn Fn(Vec3) -> bool
         return;
     }
     if let Some(g) = p.gun {
-        let slot = st.saved.slots.iter().position(|s| s.is_none());
+        let slot = st.free_slot();
         match slot {
             Some(s) => {
                 st.saved.slots[s] = Some(g);
@@ -367,12 +376,38 @@ fn pickups(st: &mut State, inp: &Frame, me: Vec3, looking: &dyn Fn(Vec3) -> bool
                 st.pickups.remove(i);
             }
             None => {
-                // full: swap with the held gun (or slot 1 when holding the pickaxe)
-                let s = match st.held { crate::state::Held::Slot(s) => s, _ => 0 };
+                // full: swap with the held gun (or the first gun slot)
+                let s = match st.held {
+                    crate::state::Held::Slot(s) if st.saved.slots[s].is_some() => s,
+                    _ => match (0..5).find(|&s| st.saved.slots[s].is_some()) { Some(s) => s, None => return },
+                };
                 let old = st.saved.slots[s].replace(g);
                 st.pickups[i].gun = old;
             }
         }
+    } else if let Ref::Consumables(c) = p.item {
+        // heals go into the hotbar: top up a stack of the same kind, else a free slot
+        let stack = CONSUMABLES[c].stack;
+        let mut left = p.count;
+        for s in 0..5 {
+            if let Some((k, n)) = st.saved.heal_slots[s].as_mut() {
+                if *k == c && *n < stack {
+                    let took = (stack - *n).min(left);
+                    *n += took;
+                    left -= took;
+                }
+            }
+        }
+        if left > 0 {
+            match st.free_slot() {
+                Some(s) => {
+                    st.saved.heal_slots[s] = Some((c, left.min(stack)));
+                    left -= left.min(stack);
+                }
+                None => st.message("Inventory full"),
+            }
+        }
+        if left == 0 { st.pickups.remove(i); } else { st.pickups[i].count = left; }
     } else {
         let left = add_stack(st, p.item, p.count);
         if left == 0 { st.pickups.remove(i); } else { st.pickups[i].count = left; }

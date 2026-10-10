@@ -62,6 +62,10 @@ pub struct Pickup {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Saved {
     pub slots: [Option<Gun>; 5],
+    /// Heals and shields share the hotbar with guns, like Fortnite: (consumables row, count). A slot holds
+    /// a gun or a heal stack, never both.
+    #[serde(default)]
+    pub heal_slots: [Option<(usize, u32)>; 5],
     pub ammo: [u32; 5],
     pub materials: [u32; 3],
     pub consumables: [u32; 4],
@@ -100,6 +104,8 @@ pub struct State {
     pub tracers: Vec<([f32; 3], [f32; 3], f32)>,
     /// Build pieces to draw this frame (game thread -> HUD): piece, material, Havok centre, yaw, is preview.
     pub build_draw: Vec<(usize, usize, [f32; 3], f32, bool)>,
+    /// Which ground pickups the camera can see this frame (same order as `pickups`).
+    pub pickup_visible: Vec<bool>,
     pub eliminated: f32,
     pub message: Option<(String, f32)>,
     pub slot: u32,
@@ -111,6 +117,7 @@ impl State {
         State {
             saved: Saved {
                 slots: [None; 5],
+                heal_slots: [None; 5],
                 ammo: [0; 5],
                 materials: [0; 3],
                 consumables: [0; 4],
@@ -142,6 +149,7 @@ impl State {
             damage_numbers: Vec::new(),
             tracers: Vec::new(),
             build_draw: Vec::new(),
+            pickup_visible: Vec::new(),
             eliminated: 0.0,
             message: None,
             slot: 0,
@@ -154,6 +162,19 @@ impl State {
             Held::Slot(i) => self.saved.slots[i],
             Held::Pickaxe => None,
         }
+    }
+
+    /// The heal stack in the selected slot: (consumables row, count).
+    pub fn held_heal(&self) -> Option<(usize, u32)> {
+        match self.held {
+            Held::Slot(i) => self.saved.heal_slots[i],
+            Held::Pickaxe => None,
+        }
+    }
+
+    /// A free hotbar slot (no gun, no heal).
+    pub fn free_slot(&self) -> Option<usize> {
+        (0..5).find(|&i| self.saved.slots[i].is_none() && self.saved.heal_slots[i].is_none())
     }
 
     pub fn held_gun_mut(&mut self) -> Option<&mut Gun> {
@@ -173,6 +194,15 @@ impl State {
             .map(|c| c.id)
             .collect();
         self.saved.opened.retain(|k| !refills.iter().any(|id| k.contains(&format!(":{id}:"))));
+        // heals carried before they moved into the hotbar
+        for c in 0..self.saved.consumables.len() {
+            let n = std::mem::take(&mut self.saved.consumables[c]);
+            if n > 0 {
+                if let Some(s) = self.free_slot() {
+                    self.saved.heal_slots[s] = Some((c, n));
+                }
+            }
+        }
         crate::log!("state: loaded slot {slot} ({} builds, {} chests opened)", self.saved.builds.len(), self.saved.opened.len());
     }
 

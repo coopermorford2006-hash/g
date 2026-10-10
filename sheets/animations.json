@@ -4,7 +4,7 @@
   "columns": {"id": "key", "used_for": "which states use it", "clips": "map of state -> @fortnite_assets row"},
   "rows": [
     {"id": "locomotion", "used_for": "idle, run, sprint, jump, fall, land, crouch", "clips": {"idle": "@fortnite_assets:anim_idle", "run": "@fortnite_assets:anim_jog", "sprint": "@fortnite_assets:anim_sprint", "jump": "@fortnite_assets:anim_jump", "fall": "@fortnite_assets:anim_fall", "land": "@fortnite_assets:anim_land", "crouch_idle": "@fortnite_assets:anim_crouch_idle", "crouch_walk": "@fortnite_assets:anim_crouch_walk"}},
-    {"id": "pickaxe", "used_for": "harvesting tool held and swing", "clips": {"idle": "@fortnite_assets:anim_pickaxe_idle", "swing": "@fortnite_assets:anim_pickaxe_swing"}},
+    {"id": "pickaxe", "used_for": "harvesting tool held and swing", "clips": {"idle": "@fortnite_assets:anim_pickaxe_idle", "swing": "@fortnite_assets:anim_pickaxe_swing", "swing2": "@fortnite_assets:anim_pickaxe_swing2", "swing3": "@fortnite_assets:anim_pickaxe_swing3", "swing4": "@fortnite_assets:anim_pickaxe_swing4"}},
     {"id": "rifle", "used_for": "AR, SMG, sniper", "clips": {"idle": "@fortnite_assets:anim_rifle_idle", "fire": "@fortnite_assets:anim_rifle_fire", "reload": "@fortnite_assets:anim_rifle_reload", "ads": "@fortnite_assets:anim_rifle_ads"}},
     {"id": "shotgun", "used_for": "pump", "clips": {"idle": "@fortnite_assets:anim_shotgun_idle", "fire": "@fortnite_assets:anim_shotgun_fire", "reload": "@fortnite_assets:anim_shotgun_reload", "ads": "@fortnite_assets:anim_rifle_ads"}},
     {"id": "pistol", "used_for": "pistol", "clips": {"idle": "@fortnite_assets:anim_pistol_idle", "fire": "@fortnite_assets:anim_pistol_fire", "reload": "@fortnite_assets:anim_pistol_reload", "ads": "@fortnite_assets:anim_pistol_ads"}},

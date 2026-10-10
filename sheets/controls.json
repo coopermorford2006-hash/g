@@ -1,36 +1,222 @@
 {
-  "sheet": "controls",
-  "about": "Fortnite's PC default bindings. The DLL reads the keyboard and mouse itself, hides the keys it owns from Elden Ring (DirectInput state hook), and presses Elden Ring's own key for actions the game still does (er_key).",
-  "columns": {"id": "key", "key": "Fortnite default key (DIK name or mouse button)", "action": "what it does", "owner": "mod | er | both", "er_key": "Elden Ring default key pressed for the player, or none"},
-  "rows": [
-    {"id": "move_fwd", "key": "W", "action": "move forward", "owner": "mod", "er_key": "none"},
-    {"id": "move_back", "key": "S", "action": "move back", "owner": "mod", "er_key": "none"},
-    {"id": "move_left", "key": "A", "action": "move left", "owner": "mod", "er_key": "none"},
-    {"id": "move_right", "key": "D", "action": "move right", "owner": "mod", "er_key": "none"},
-    {"id": "jump", "key": "SPACE", "action": "jump", "owner": "mod", "er_key": "none"},
-    {"id": "sprint", "key": "LSHIFT", "action": "sprint (hold)", "owner": "mod", "er_key": "none"},
-    {"id": "crouch", "key": "LCONTROL", "action": "crouch (toggle)", "owner": "mod", "er_key": "none"},
-    {"id": "fire", "key": "MOUSE1", "action": "fire / swing pickaxe / place build", "owner": "mod", "er_key": "none"},
-    {"id": "aim", "key": "MOUSE2", "action": "aim down sights", "owner": "mod", "er_key": "none"},
-    {"id": "reload", "key": "R", "action": "reload (build mode: rotate piece)", "owner": "mod", "er_key": "none"},
-    {"id": "interact", "key": "E", "action": "search chest, pick up, and Elden Ring interactions (graces, doors, NPCs)", "owner": "both", "er_key": "E"},
-    {"id": "pickaxe", "key": "F", "action": "equip harvesting tool", "owner": "mod", "er_key": "none"},
-    {"id": "slot1", "key": "1", "action": "weapon slot 1", "owner": "mod", "er_key": "none"},
-    {"id": "slot2", "key": "2", "action": "weapon slot 2", "owner": "mod", "er_key": "none"},
-    {"id": "slot3", "key": "3", "action": "weapon slot 3", "owner": "mod", "er_key": "none"},
-    {"id": "slot4", "key": "4", "action": "weapon slot 4", "owner": "mod", "er_key": "none"},
-    {"id": "slot5", "key": "5", "action": "weapon slot 5", "owner": "mod", "er_key": "none"},
-    {"id": "build_mode", "key": "Q", "action": "toggle build mode", "owner": "mod", "er_key": "none"},
-    {"id": "build_wall", "key": "F1", "action": "select wall", "owner": "mod", "er_key": "none"},
-    {"id": "build_floor", "key": "F2", "action": "select floor", "owner": "mod", "er_key": "none"},
-    {"id": "build_ramp", "key": "F3", "action": "select ramp", "owner": "mod", "er_key": "none"},
-    {"id": "build_material", "key": "MOUSE2", "action": "cycle wood/stone/metal in build mode", "owner": "mod", "er_key": "none"},
-    {"id": "map", "key": "M", "action": "open the Elden Ring map", "owner": "er", "er_key": "G"},
-    {"id": "menu", "key": "ESCAPE", "action": "Elden Ring menu (inventory, level up at graces, system)", "owner": "er", "er_key": "ESCAPE"},
-    {"id": "flask", "key": "H", "action": "drink equipped Elden Ring flask (Crimson Tears still heal)", "owner": "er", "er_key": "R"},
-    {"id": "torrent", "key": "B", "action": "summon / dismiss Torrent (Elden Ring controls while riding)", "owner": "er", "er_key": "none"},
-    {"id": "heal_item", "key": "C", "action": "use selected consumable slot", "owner": "mod", "er_key": "none"}
-  ],
-  "_unverified": {"torrent": ["er_key"]},
-  "_unverified_note": "Elden Ring has no default key for Spectral Steed Whistle; the DLL will trigger it by the quick-item it is on. Confirm on the user's PC."
+ "sheet": "controls",
+ "about": "Fortnite's PC default bindings. The DLL reads the keyboard and mouse itself, hides the keys it owns from Elden Ring (DirectInput state hook), and presses Elden Ring's own key for actions the game still does (er_key).",
+ "columns": {
+  "id": "key",
+  "key": "Fortnite default key (DIK name or mouse button)",
+  "action": "what it does",
+  "owner": "mod | er | both",
+  "er_key": "Elden Ring default key pressed for the player, or none"
+ },
+ "rows": [
+  {
+   "id": "move_fwd",
+   "key": "W",
+   "action": "move forward",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "move_back",
+   "key": "S",
+   "action": "move back",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "move_left",
+   "key": "A",
+   "action": "move left",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "move_right",
+   "key": "D",
+   "action": "move right",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "jump",
+   "key": "SPACE",
+   "action": "jump",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "sprint",
+   "key": "LCONTROL",
+   "action": "sprint (hold)",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "crouch",
+   "key": "WHEELUP",
+   "action": "crouch (toggle; scroll up)",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "fire",
+   "key": "MOUSE1",
+   "action": "fire / swing pickaxe / place build",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "aim",
+   "key": "MOUSE2",
+   "action": "aim down sights",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "reload",
+   "key": "C",
+   "action": "reload",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "interact",
+   "key": "WHEELDOWN",
+   "action": "search chest, pick up, and Elden Ring interactions (graces, doors, NPCs); scroll down",
+   "owner": "both",
+   "er_key": "E"
+  },
+  {
+   "id": "pickaxe",
+   "key": "LSHIFT",
+   "action": "equip harvesting tool",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "slot1",
+   "key": "1",
+   "action": "weapon slot 1",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "slot2",
+   "key": "2",
+   "action": "weapon slot 2",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "slot3",
+   "key": "3",
+   "action": "weapon slot 3",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "slot4",
+   "key": "4",
+   "action": "weapon slot 4",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "slot5",
+   "key": "5",
+   "action": "weapon slot 5",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "build_mode",
+   "key": "NONE",
+   "action": "unbound: a build key enters build mode, a weapon or the pickaxe leaves it",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "build_wall",
+   "key": "R",
+   "action": "select wall",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "build_floor",
+   "key": "E",
+   "action": "select floor",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "build_ramp",
+   "key": "Q",
+   "action": "select ramp",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "build_cone",
+   "key": "EQUALS",
+   "action": "select cone (roof)",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "edit",
+   "key": "F",
+   "action": "edit a build piece (not implemented yet)",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "build_material",
+   "key": "MOUSE2",
+   "action": "cycle wood/stone/metal in build mode",
+   "owner": "mod",
+   "er_key": "none"
+  },
+  {
+   "id": "map",
+   "key": "M",
+   "action": "open the Elden Ring map",
+   "owner": "er",
+   "er_key": "G"
+  },
+  {
+   "id": "menu",
+   "key": "ESCAPE",
+   "action": "Elden Ring menu (inventory, level up at graces, system)",
+   "owner": "er",
+   "er_key": "ESCAPE"
+  },
+  {
+   "id": "flask",
+   "key": "H",
+   "action": "drink equipped Elden Ring flask (Crimson Tears still heal)",
+   "owner": "er",
+   "er_key": "R"
+  },
+  {
+   "id": "torrent",
+   "key": "B",
+   "action": "summon / dismiss Torrent (Elden Ring controls while riding)",
+   "owner": "er",
+   "er_key": "none"
+  },
+  {
+   "id": "heal_item",
+   "key": "NONE",
+   "action": "unbound: heals and shields sit in hotbar slots, select and fire to use",
+   "owner": "mod",
+   "er_key": "none"
+  }
+ ],
+ "_unverified": {
+  "torrent": [
+   "er_key"
+  ]
+ },
+ "_unverified_note": "Elden Ring has no default key for Spectral Steed Whistle; the DLL will trigger it by the quick-item it is on. Confirm on the user's PC."
 }

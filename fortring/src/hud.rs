@@ -26,6 +26,7 @@ const PICK_ROT_DEG: [f32; 3] = [0.0, 0.0, 90.0];
 const PICK_SLIDE: [f32; 3] = [0.0, 0.45, 0.0];
 
 pub fn pick_grip(hand: glam::Mat4) -> glam::Mat4 {
+    #[allow(unused_mut)]
     let (mut r, mut t) = (PICK_ROT_DEG, PICK_SLIDE);
     #[cfg(test)]
     {
@@ -50,6 +51,9 @@ pub struct Hud {
     /// A state the controller wants must hold this long before the clip switches (grounded/airborne and
     /// moving/still can flicker frame to frame, which looked like vibrating); switches counted for the log.
     pending: (&'static str, f32),
+    /// Which of the four harvesting swings plays, and the cooldown last frame (a jump up = a new swing).
+    swing_idx: usize,
+    last_cooldown: f32,
     switches: (u32, f32),
     posed: (Vec<Vec3>, Vec<Vec3>),
     /// Fortnite props by fortnite_assets row (chests, ammo boxes, weapons, consumables).
@@ -60,7 +64,10 @@ pub struct Hud {
 }
 
 /// The clips the outfit plays (sheets/fortnite_assets anim_* rows): locomotion, weapon stances, swings.
-const LOCOMOTION: [(&str, usize); 11] = [
+const LOCOMOTION: [(&str, usize); 14] = [
+    ("anim_pickaxe_swing2", FORTNITE_ASSETS_ANIM_PICKAXE_SWING2),
+    ("anim_pickaxe_swing3", FORTNITE_ASSETS_ANIM_PICKAXE_SWING3),
+    ("anim_pickaxe_swing4", FORTNITE_ASSETS_ANIM_PICKAXE_SWING4),
     ("anim_rifle_idle", FORTNITE_ASSETS_ANIM_RIFLE_IDLE),
     ("anim_shotgun_idle", FORTNITE_ASSETS_ANIM_SHOTGUN_IDLE),
     ("anim_pistol_idle", FORTNITE_ASSETS_ANIM_PISTOL_IDLE),
@@ -197,22 +204,39 @@ impl Hud {
         self.anim_t += dt * rate;
         let clip = self.clips.get(self.playing).map(|c| (c, self.anim_t));
         // holding a gun: the upper body plays the gun's idle (rifle / shotgun / pistol / launcher)
-        let (held, pickups, pickaxe, cooldown, builds) = STATE.lock()
-            .map(|s| (s.held_gun().map(|g| g.weapon), s.pickups.clone(), s.held == Held::Pickaxe && s.mode == Mode::Combat, s.fire_cooldown, s.build_draw.clone()))
-            .unwrap_or((None, Vec::new(), false, 0.0, Vec::new()));
+        let (held, pickups, pickaxe, cooldown, builds, heal) = STATE.lock()
+            .map(|s| {
+                let seen: Vec<_> = s.pickups.iter().zip(s.pickup_visible.iter().chain(std::iter::repeat(&false))).filter(|(_, v)| **v).map(|(p, _)| p.clone()).collect();
+                (s.held_gun().map(|g| g.weapon), seen, s.held == Held::Pickaxe && s.mode == Mode::Combat, s.fire_cooldown, s.build_draw.clone(), s.held_heal().map(|h| h.0))
+            })
+            .unwrap_or((None, Vec::new(), false, 0.0, Vec::new(), None));
         let upper_clip = held.and_then(|w| match WEAPONS[w].class {
             "shotgun" => self.clips.get("anim_shotgun_idle"),
             "pistol" | "smg" => self.clips.get("anim_pistol_idle"),
             "launcher" => self.clips.get("anim_launcher_idle"),
             _ => self.clips.get("anim_rifle_idle"),
         });
-        let mut layers = crate::model::Layers { base: clip, upper: upper_clip.map(|c| (c, self.anim_t)) };
-        // pickaxe swing: the upper body plays the harvesting swing once per swing, timed by the cooldown
+        // the stance clips are jog cycles: standing still holds their first frame (playing them while
+        // idle bobbed the gun and shoulders around)
+        let stance_t = if speed > 0.3 { self.anim_t } else { 0.0 };
+        let mut layers = crate::model::Layers { base: clip, upper: upper_clip.map(|c| (c, stance_t)) };
+        // pickaxe swing: Fortnite's one-handed set plays swings 1-4 in turn, once per swing, timed by the
+        // cooldown; standing still the whole body swings (hips turn), moving only the upper body
         let swing = PICKAXE[PICKAXE_DEFAULT].swing_s;
+        if pickaxe && cooldown > self.last_cooldown + 0.01 {
+            self.swing_idx = (self.swing_idx + 1) % 4;
+        }
+        self.last_cooldown = cooldown;
         if pickaxe && cooldown > 0.0 && swing > 0.0 {
-            if let Some(c) = self.clips.get("anim_pickaxe_swing") {
+            let name = ["anim_pickaxe_swing", "anim_pickaxe_swing2", "anim_pickaxe_swing3", "anim_pickaxe_swing4"][self.swing_idx];
+            if let Some(c) = self.clips.get(name).or_else(|| self.clips.get("anim_pickaxe_swing")) {
                 let phase = (1.0 - cooldown / swing).clamp(0.0, 1.0);
-                layers.upper = Some((c, phase * c.duration() * 0.999));
+                let at = Some((c, phase * c.duration() * 0.999));
+                if speed > 0.3 || !grounded {
+                    layers.upper = at;
+                } else {
+                    layers = crate::model::Layers { base: at, upper: None };
+                }
             }
         }
         self.tris.clear();
@@ -228,6 +252,14 @@ impl Hud {
             if let (Some(hand), Some((pick, slots))) = (hand, self.props.get(&PICKAXE[PICKAXE_DEFAULT].fn_mesh)) {
                 crate::model::place(pick, pick_grip(hand), pos, nrm);
                 crate::model::emit(pick, pos, nrm, body.0, yaw, &view, slots, &mut self.tris);
+            }
+        }
+        // a heal or shield in the right hand
+        if let Some(c) = heal {
+            let hand = self.outfit.iter().find_map(|(m, _)| crate::model::bone_matrix(m, &layers, "hand_r"));
+            if let (Some(hand), Some((mesh, slots))) = (hand, self.props.get(&CONSUMABLES[c].fn_mesh)) {
+                crate::model::place(mesh, grip(hand), pos, nrm);
+                crate::model::emit(mesh, pos, nrm, body.0, yaw, &view, slots, &mut self.tris);
             }
         }
         // the held gun follows the right hand
@@ -254,7 +286,7 @@ impl Hud {
         // chests and ammo boxes around the player, loot on the ground
         let spin = (unsafe { hudhook::imgui::sys::igGetTime() } as f32) * 1.5;
         for c in crate::loot::near_containers() {
-            if c.pos.distance(body.0) > 80.0 {
+            if !c.visible {
                 continue;
             }
             if let Some((mesh, slots)) = self.props.get(&CONTAINERS[c.kind].fn_mesh) {
@@ -326,6 +358,8 @@ impl Hud {
             playing: "anim_idle",
             anim_t: 0.0,
             pending: ("anim_idle", 0.0),
+            swing_idx: 0,
+            last_cooldown: 0.0,
             switches: (0, 0.0),
             posed: (Vec::new(), Vec::new()),
             props: HashMap::new(),
@@ -495,6 +529,12 @@ impl ImguiRenderLoop for Hud {
                         dl.add_rect(a, b, col([0.05, 0.08, 0.15, 0.55])).filled(true).rounding(4.0).build();
                         if i == 0 {
                             dl.add_text([a[0] + 6.0, a[1] + 6.0], white, "Pickaxe");
+                        } else if let Some((c, n)) = st.saved.heal_slots[i - 1] {
+                            match self.tex.get(&CONSUMABLES[c].fn_icon) {
+                                Some((t, _)) => dl.add_image(*t, [a[0] + 4.0, a[1] + 4.0], [b[0] - 4.0, b[1] - 4.0]).build(),
+                                None => dl.add_text([a[0] + 6.0, a[1] + 6.0], white, CONSUMABLES[c].name),
+                            }
+                            dl.add_text([a[0] + 6.0, b[1] - 24.0], white, format!("{n}"));
                         }
                     }
                 }
@@ -507,14 +547,7 @@ impl ImguiRenderLoop for Hud {
                 let (p, _) = px(HUD_AMMO_COUNTER);
                 dl.add_text(p, white, format!("{}  /  {}", g.mag, st.saved.ammo[g.row().ammo]));
             }
-            // consumable slot
-            let (p, s) = px(HUD_CONSUMABLE_SLOT);
-            let c = st.selected_consumable;
-            dl.add_rect(p, [p[0] + s[0], p[1] + s[1]], col([0.05, 0.08, 0.15, 0.55])).filled(true).rounding(4.0).build();
-            if let Some((t, _)) = self.tex.get(&CONSUMABLES[c].fn_icon) {
-                dl.add_image(*t, [p[0] + 4.0, p[1] + 4.0], [p[0] + s[0] - 4.0, p[1] + s[1] - 4.0]).build();
-            }
-            dl.add_text([p[0] + 6.0, p[1] + s[1] - 24.0], white, format!("{} [C]", st.saved.consumables[c]));
+            let _ = HUD_CONSUMABLE_SLOT; // heals live in the hotbar now
         }
 
         // crosshair with live bloom (Fortnite's four-tick reticle), hidden for the pickaxe

@@ -111,6 +111,7 @@ pub fn preview(st: &State, cam_pos: Vec3, cam_fwd: Vec3) -> Option<(Vec3, f32)> 
             Vec3::new(cell(feet_local.x) + f.x * TILE * 0.5, floor_y + STOREY * 0.5, cell(feet_local.z) + f.z * TILE * 0.5)
         }
         "floor_cell" => Vec3::new(cx, floor_y + if local.y > floor_y + STOREY * 0.6 { STOREY } else { 0.0 }, cz),
+        "cone_cell" => Vec3::new(cx, floor_y + row.size_m[2] * 0.5, cz),
         _ => Vec3::new(cx, floor_y + STOREY * 0.5, cz), // ramp_cell
     };
     Some((pos, yaw))
@@ -121,7 +122,23 @@ pub fn preview(st: &State, cam_pos: Vec3, cam_fwd: Vec3) -> Option<(Vec3, f32)> 
 pub fn refresh(st: &mut State, cam_pos: Vec3, cam_fwd: Vec3) {
     let here = boxes(st);
     *world::BUILD_BOXES.lock().unwrap() = here.iter().map(|(_, b)| b.clone()).collect();
+    // pieces hidden behind terrain are not drawn (centre and the box's corners tested)
     let mut draw: Vec<(usize, usize, [f32; 3], f32, bool)> = here.iter()
+        .filter(|(_, b)| b.center.distance(cam_pos) < 150.0)
+        .filter(|(_, b)| {
+            let mut pts = vec![b.center];
+            // corners across the box's two largest extents (a wall's width and height, a floor's width and depth)
+            let h = b.half.to_array();
+            let mut order = [0usize, 1, 2];
+            order.sort_by(|a, c| h[*c].total_cmp(&h[*a]));
+            for (sa, sb) in [(-1.0, -1.0), (1.0, -1.0), (-1.0, 1.0), (1.0, 1.0)] {
+                let mut l = [0.0f32; 3];
+                l[order[0]] = h[order[0]] * sa * 0.9;
+                l[order[1]] = h[order[1]] * sb * 0.9;
+                pts.push(b.center + b.axes * Vec3::from(l));
+            }
+            world::visible(cam_pos, &pts)
+        })
         .map(|(i, b)| { let p = &st.saved.builds[*i]; (p.piece, p.material, b.center.into(), p.yaw, false) })
         .collect();
     if st.mode == crate::state::Mode::Build {
@@ -147,7 +164,7 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, now: f64, cam_pos: Vec3, cam_f
     if inp.pressed(CONTROLS_BUILD_MODE) {
         st.mode = if st.mode == Mode::Build { Mode::Combat } else { Mode::Build };
     }
-    for (c, piece) in [(CONTROLS_BUILD_WALL, BUILD_PIECES_WALL), (CONTROLS_BUILD_FLOOR, BUILD_PIECES_FLOOR), (CONTROLS_BUILD_RAMP, BUILD_PIECES_RAMP)] {
+    for (c, piece) in [(CONTROLS_BUILD_WALL, BUILD_PIECES_WALL), (CONTROLS_BUILD_FLOOR, BUILD_PIECES_FLOOR), (CONTROLS_BUILD_RAMP, BUILD_PIECES_RAMP), (CONTROLS_BUILD_CONE, BUILD_PIECES_CONE)] {
         if inp.pressed(c) {
             st.mode = Mode::Build;
             st.build_piece = piece;
@@ -163,9 +180,7 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, now: f64, cam_pos: Vec3, cam_f
     if inp.pressed(CONTROLS_BUILD_MATERIAL) {
         st.build_material = (st.build_material + 1) % MATERIALS.len();
     }
-    if inp.pressed(CONTROLS_RELOAD) {
-        st.build_rotation = (st.build_rotation + 1) % 4;
-    }
+    // no rotation key: pieces face where the player looks, like Fortnite's defaults
     if !inp.down(CONTROLS_FIRE) || st.fire_cooldown > 0.0 {
         return;
     }

@@ -65,6 +65,15 @@ pub fn ray(from: Vec3, to: Vec3) -> Option<Vec3> {
     }
 }
 
+/// Whether the camera sees any of `points` past map collision (the renderer has no depth buffer, so
+/// things behind terrain are left out instead).
+pub fn visible(cam: Vec3, points: &[Vec3]) -> bool {
+    points.iter().any(|p| match map_ray(cam, *p) {
+        Some(hit) => hit.distance(*p) < 0.35,
+        None => true,
+    })
+}
+
 /// Ray cast against the map only.
 pub fn map_ray(from: Vec3, to: Vec3) -> Option<Vec3> {
     let player = player()?;

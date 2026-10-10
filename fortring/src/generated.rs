@@ -80,7 +80,7 @@ pub struct AnimationsRow {
 
 pub static ANIMATIONS: [AnimationsRow; 9] = [
     AnimationsRow { id: "locomotion", used_for: "idle, run, sprint, jump, fall, land, crouch", clips: &[("idle", FORTNITE_ASSETS_ANIM_IDLE), ("run", FORTNITE_ASSETS_ANIM_JOG), ("sprint", FORTNITE_ASSETS_ANIM_SPRINT), ("jump", FORTNITE_ASSETS_ANIM_JUMP), ("fall", FORTNITE_ASSETS_ANIM_FALL), ("land", FORTNITE_ASSETS_ANIM_LAND), ("crouch_idle", FORTNITE_ASSETS_ANIM_CROUCH_IDLE), ("crouch_walk", FORTNITE_ASSETS_ANIM_CROUCH_WALK)] },
-    AnimationsRow { id: "pickaxe", used_for: "harvesting tool held and swing", clips: &[("idle", FORTNITE_ASSETS_ANIM_PICKAXE_IDLE), ("swing", FORTNITE_ASSETS_ANIM_PICKAXE_SWING)] },
+    AnimationsRow { id: "pickaxe", used_for: "harvesting tool held and swing", clips: &[("idle", FORTNITE_ASSETS_ANIM_PICKAXE_IDLE), ("swing", FORTNITE_ASSETS_ANIM_PICKAXE_SWING), ("swing2", FORTNITE_ASSETS_ANIM_PICKAXE_SWING2), ("swing3", FORTNITE_ASSETS_ANIM_PICKAXE_SWING3), ("swing4", FORTNITE_ASSETS_ANIM_PICKAXE_SWING4)] },
     AnimationsRow { id: "rifle", used_for: "AR, SMG, sniper", clips: &[("idle", FORTNITE_ASSETS_ANIM_RIFLE_IDLE), ("fire", FORTNITE_ASSETS_ANIM_RIFLE_FIRE), ("reload", FORTNITE_ASSETS_ANIM_RIFLE_RELOAD), ("ads", FORTNITE_ASSETS_ANIM_RIFLE_ADS)] },
     AnimationsRow { id: "shotgun", used_for: "pump", clips: &[("idle", FORTNITE_ASSETS_ANIM_SHOTGUN_IDLE), ("fire", FORTNITE_ASSETS_ANIM_SHOTGUN_FIRE), ("reload", FORTNITE_ASSETS_ANIM_SHOTGUN_RELOAD), ("ads", FORTNITE_ASSETS_ANIM_RIFLE_ADS)] },
     AnimationsRow { id: "pistol", used_for: "pistol", clips: &[("idle", FORTNITE_ASSETS_ANIM_PISTOL_IDLE), ("fire", FORTNITE_ASSETS_ANIM_PISTOL_FIRE), ("reload", FORTNITE_ASSETS_ANIM_PISTOL_RELOAD), ("ads", FORTNITE_ASSETS_ANIM_PISTOL_ADS)] },
@@ -93,6 +93,7 @@ pub static ANIMATIONS: [AnimationsRow; 9] = [
 pub const BUILD_PIECES_WALL: usize = 0;
 pub const BUILD_PIECES_FLOOR: usize = 1;
 pub const BUILD_PIECES_RAMP: usize = 2;
+pub const BUILD_PIECES_CONE: usize = 3;
 
 /// Fortnite build pieces on Fortnite's grid (a tile is 5.12 m square, a storey 3.84 m tall). The DLL draws the Fortnite mesh and owns their collision: the Fortnite movement controller, camera and your bu
 #[derive(Debug)]
@@ -109,7 +110,7 @@ pub struct BuildPiecesRow {
     pub size_m: [f32; 3],
     /// tilt of the collision box (ramp: atan(3.84/5.12) = 36.87)
     pub pitch_deg: f32,
-    /// placement rule: wall_edge | floor_cell | ramp_cell
+    /// placement rule: wall_edge | floor_cell | ramp_cell | cone_cell
     pub pivot: &'static str,
     /// Elden Ring asset spawned so enemies collide with it, or none (0.1: none, see about)
     pub collision_asset: &'static str,
@@ -123,10 +124,11 @@ pub struct BuildPiecesRow {
     pub fn_mesh_metal: usize,
 }
 
-pub static BUILD_PIECES: [BuildPiecesRow; 3] = [
+pub static BUILD_PIECES: [BuildPiecesRow; 4] = [
     BuildPiecesRow { id: "wall", name: "Wall", key: CONTROLS_BUILD_WALL, hp_column: "wall_hp", size_m: [5.12_f32, 0.2_f32, 3.84_f32], pitch_deg: 0.0_f32, pivot: "wall_edge", collision_asset: "none", collision_base_size_m: [0.0_f32, 0.0_f32, 0.0_f32], fn_mesh_wood: FORTNITE_ASSETS_MESH_WALL_WOOD, fn_mesh_stone: FORTNITE_ASSETS_MESH_WALL_STONE, fn_mesh_metal: FORTNITE_ASSETS_MESH_WALL_METAL },
     BuildPiecesRow { id: "floor", name: "Floor", key: CONTROLS_BUILD_FLOOR, hp_column: "floor_hp", size_m: [5.12_f32, 5.12_f32, 0.2_f32], pitch_deg: 0.0_f32, pivot: "floor_cell", collision_asset: "none", collision_base_size_m: [0.0_f32, 0.0_f32, 0.0_f32], fn_mesh_wood: FORTNITE_ASSETS_MESH_FLOOR_WOOD, fn_mesh_stone: FORTNITE_ASSETS_MESH_FLOOR_STONE, fn_mesh_metal: FORTNITE_ASSETS_MESH_FLOOR_METAL },
     BuildPiecesRow { id: "ramp", name: "Ramp", key: CONTROLS_BUILD_RAMP, hp_column: "ramp_hp", size_m: [5.12_f32, 6.4_f32, 0.2_f32], pitch_deg: 36.87_f32, pivot: "ramp_cell", collision_asset: "none", collision_base_size_m: [0.0_f32, 0.0_f32, 0.0_f32], fn_mesh_wood: FORTNITE_ASSETS_MESH_RAMP_WOOD, fn_mesh_stone: FORTNITE_ASSETS_MESH_RAMP_STONE, fn_mesh_metal: FORTNITE_ASSETS_MESH_RAMP_METAL },
+    BuildPiecesRow { id: "cone", name: "Cone", key: CONTROLS_BUILD_CONE, hp_column: "floor_hp", size_m: [5.12_f32, 5.12_f32, 1.92_f32], pitch_deg: 0.0_f32, pivot: "cone_cell", collision_asset: "none", collision_base_size_m: [0.0_f32, 0.0_f32, 0.0_f32], fn_mesh_wood: FORTNITE_ASSETS_MESH_CONE_WOOD, fn_mesh_stone: FORTNITE_ASSETS_MESH_CONE_STONE, fn_mesh_metal: FORTNITE_ASSETS_MESH_CONE_METAL },
 ];
 
 pub const CAMERA_FOV: usize = 0;
@@ -254,12 +256,14 @@ pub const CONTROLS_BUILD_MODE: usize = 17;
 pub const CONTROLS_BUILD_WALL: usize = 18;
 pub const CONTROLS_BUILD_FLOOR: usize = 19;
 pub const CONTROLS_BUILD_RAMP: usize = 20;
-pub const CONTROLS_BUILD_MATERIAL: usize = 21;
-pub const CONTROLS_MAP: usize = 22;
-pub const CONTROLS_MENU: usize = 23;
-pub const CONTROLS_FLASK: usize = 24;
-pub const CONTROLS_TORRENT: usize = 25;
-pub const CONTROLS_HEAL_ITEM: usize = 26;
+pub const CONTROLS_BUILD_CONE: usize = 21;
+pub const CONTROLS_EDIT: usize = 22;
+pub const CONTROLS_BUILD_MATERIAL: usize = 23;
+pub const CONTROLS_MAP: usize = 24;
+pub const CONTROLS_MENU: usize = 25;
+pub const CONTROLS_FLASK: usize = 26;
+pub const CONTROLS_TORRENT: usize = 27;
+pub const CONTROLS_HEAL_ITEM: usize = 28;
 
 /// Fortnite's PC default bindings. The DLL reads the keyboard and mouse itself, hides the keys it owns from Elden Ring (DirectInput state hook), and presses Elden Ring's own key for actions the game stil
 #[derive(Debug)]
@@ -276,34 +280,36 @@ pub struct ControlsRow {
     pub er_key: &'static str,
 }
 
-pub static CONTROLS: [ControlsRow; 27] = [
+pub static CONTROLS: [ControlsRow; 29] = [
     ControlsRow { id: "move_fwd", key: "W", action: "move forward", owner: "mod", er_key: "none" },
     ControlsRow { id: "move_back", key: "S", action: "move back", owner: "mod", er_key: "none" },
     ControlsRow { id: "move_left", key: "A", action: "move left", owner: "mod", er_key: "none" },
     ControlsRow { id: "move_right", key: "D", action: "move right", owner: "mod", er_key: "none" },
     ControlsRow { id: "jump", key: "SPACE", action: "jump", owner: "mod", er_key: "none" },
-    ControlsRow { id: "sprint", key: "LSHIFT", action: "sprint (hold)", owner: "mod", er_key: "none" },
-    ControlsRow { id: "crouch", key: "LCONTROL", action: "crouch (toggle)", owner: "mod", er_key: "none" },
+    ControlsRow { id: "sprint", key: "LCONTROL", action: "sprint (hold)", owner: "mod", er_key: "none" },
+    ControlsRow { id: "crouch", key: "WHEELUP", action: "crouch (toggle; scroll up)", owner: "mod", er_key: "none" },
     ControlsRow { id: "fire", key: "MOUSE1", action: "fire / swing pickaxe / place build", owner: "mod", er_key: "none" },
     ControlsRow { id: "aim", key: "MOUSE2", action: "aim down sights", owner: "mod", er_key: "none" },
-    ControlsRow { id: "reload", key: "R", action: "reload (build mode: rotate piece)", owner: "mod", er_key: "none" },
-    ControlsRow { id: "interact", key: "E", action: "search chest, pick up, and Elden Ring interactions (graces, doors, NPCs)", owner: "both", er_key: "E" },
-    ControlsRow { id: "pickaxe", key: "F", action: "equip harvesting tool", owner: "mod", er_key: "none" },
+    ControlsRow { id: "reload", key: "C", action: "reload", owner: "mod", er_key: "none" },
+    ControlsRow { id: "interact", key: "WHEELDOWN", action: "search chest, pick up, and Elden Ring interactions (graces, doors, NPCs); scroll down", owner: "both", er_key: "E" },
+    ControlsRow { id: "pickaxe", key: "LSHIFT", action: "equip harvesting tool", owner: "mod", er_key: "none" },
     ControlsRow { id: "slot1", key: "1", action: "weapon slot 1", owner: "mod", er_key: "none" },
     ControlsRow { id: "slot2", key: "2", action: "weapon slot 2", owner: "mod", er_key: "none" },
     ControlsRow { id: "slot3", key: "3", action: "weapon slot 3", owner: "mod", er_key: "none" },
     ControlsRow { id: "slot4", key: "4", action: "weapon slot 4", owner: "mod", er_key: "none" },
     ControlsRow { id: "slot5", key: "5", action: "weapon slot 5", owner: "mod", er_key: "none" },
-    ControlsRow { id: "build_mode", key: "Q", action: "toggle build mode", owner: "mod", er_key: "none" },
-    ControlsRow { id: "build_wall", key: "F1", action: "select wall", owner: "mod", er_key: "none" },
-    ControlsRow { id: "build_floor", key: "F2", action: "select floor", owner: "mod", er_key: "none" },
-    ControlsRow { id: "build_ramp", key: "F3", action: "select ramp", owner: "mod", er_key: "none" },
+    ControlsRow { id: "build_mode", key: "NONE", action: "unbound: a build key enters build mode, a weapon or the pickaxe leaves it", owner: "mod", er_key: "none" },
+    ControlsRow { id: "build_wall", key: "R", action: "select wall", owner: "mod", er_key: "none" },
+    ControlsRow { id: "build_floor", key: "E", action: "select floor", owner: "mod", er_key: "none" },
+    ControlsRow { id: "build_ramp", key: "Q", action: "select ramp", owner: "mod", er_key: "none" },
+    ControlsRow { id: "build_cone", key: "EQUALS", action: "select cone (roof)", owner: "mod", er_key: "none" },
+    ControlsRow { id: "edit", key: "F", action: "edit a build piece (not implemented yet)", owner: "mod", er_key: "none" },
     ControlsRow { id: "build_material", key: "MOUSE2", action: "cycle wood/stone/metal in build mode", owner: "mod", er_key: "none" },
     ControlsRow { id: "map", key: "M", action: "open the Elden Ring map", owner: "er", er_key: "G" },
     ControlsRow { id: "menu", key: "ESCAPE", action: "Elden Ring menu (inventory, level up at graces, system)", owner: "er", er_key: "ESCAPE" },
     ControlsRow { id: "flask", key: "H", action: "drink equipped Elden Ring flask (Crimson Tears still heal)", owner: "er", er_key: "R" },
     ControlsRow { id: "torrent", key: "B", action: "summon / dismiss Torrent (Elden Ring controls while riding)", owner: "er", er_key: "none" },
-    ControlsRow { id: "heal_item", key: "C", action: "use selected consumable slot", owner: "mod", er_key: "none" },
+    ControlsRow { id: "heal_item", key: "NONE", action: "unbound: heals and shields sit in hotbar slots, select and fire to use", owner: "mod", er_key: "none" },
 ];
 
 pub const ER_ROWS_GUN_BULLET: usize = 0;
@@ -396,50 +402,56 @@ pub const FORTNITE_ASSETS_TEX_BUILD_METAL: usize = 57;
 pub const FORTNITE_ASSETS_MESH_WALL_METAL: usize = 58;
 pub const FORTNITE_ASSETS_MESH_FLOOR_METAL: usize = 59;
 pub const FORTNITE_ASSETS_MESH_RAMP_METAL: usize = 60;
-pub const FORTNITE_ASSETS_MESH_CHEST: usize = 61;
-pub const FORTNITE_ASSETS_SND_CHEST_OPEN: usize = 62;
-pub const FORTNITE_ASSETS_SND_CHEST_HUM: usize = 63;
-pub const FORTNITE_ASSETS_MESH_AMMO_BOX: usize = 64;
-pub const FORTNITE_ASSETS_SND_AMMO_BOX_OPEN: usize = 65;
-pub const FORTNITE_ASSETS_SND_NONE: usize = 66;
-pub const FORTNITE_ASSETS_UI_HEALTH_BAR: usize = 67;
-pub const FORTNITE_ASSETS_UI_SHIELD_BAR: usize = 68;
-pub const FORTNITE_ASSETS_UI_SLOT_FRAME: usize = 69;
-pub const FORTNITE_ASSETS_UI_BUILD_SLOTS: usize = 70;
-pub const FORTNITE_ASSETS_UI_RETICLES: usize = 71;
-pub const FORTNITE_ASSETS_UI_HITMARKER: usize = 72;
-pub const FORTNITE_ASSETS_ICON_GOLD: usize = 73;
-pub const FORTNITE_ASSETS_FONT_BURBANK: usize = 74;
-pub const FORTNITE_ASSETS_ANIM_IDLE: usize = 75;
-pub const FORTNITE_ASSETS_ANIM_JOG: usize = 76;
-pub const FORTNITE_ASSETS_ANIM_SPRINT: usize = 77;
-pub const FORTNITE_ASSETS_ANIM_JUMP: usize = 78;
-pub const FORTNITE_ASSETS_ANIM_FALL: usize = 79;
-pub const FORTNITE_ASSETS_ANIM_LAND: usize = 80;
-pub const FORTNITE_ASSETS_ANIM_CROUCH_IDLE: usize = 81;
-pub const FORTNITE_ASSETS_ANIM_CROUCH_WALK: usize = 82;
-pub const FORTNITE_ASSETS_ANIM_PICKAXE_IDLE: usize = 83;
-pub const FORTNITE_ASSETS_ANIM_PICKAXE_SWING: usize = 84;
-pub const FORTNITE_ASSETS_ANIM_RIFLE_IDLE: usize = 85;
-pub const FORTNITE_ASSETS_ANIM_RIFLE_FIRE: usize = 86;
-pub const FORTNITE_ASSETS_ANIM_RIFLE_RELOAD: usize = 87;
-pub const FORTNITE_ASSETS_ANIM_RIFLE_ADS: usize = 88;
-pub const FORTNITE_ASSETS_ANIM_SHOTGUN_IDLE: usize = 89;
-pub const FORTNITE_ASSETS_ANIM_SHOTGUN_FIRE: usize = 90;
-pub const FORTNITE_ASSETS_ANIM_SHOTGUN_RELOAD: usize = 91;
-pub const FORTNITE_ASSETS_ANIM_PISTOL_IDLE: usize = 92;
-pub const FORTNITE_ASSETS_ANIM_PISTOL_FIRE: usize = 93;
-pub const FORTNITE_ASSETS_ANIM_PISTOL_RELOAD: usize = 94;
-pub const FORTNITE_ASSETS_ANIM_PISTOL_ADS: usize = 95;
-pub const FORTNITE_ASSETS_ANIM_LAUNCHER_IDLE: usize = 96;
-pub const FORTNITE_ASSETS_ANIM_LAUNCHER_FIRE: usize = 97;
-pub const FORTNITE_ASSETS_ANIM_LAUNCHER_RELOAD: usize = 98;
-pub const FORTNITE_ASSETS_ANIM_BANDAGE: usize = 99;
-pub const FORTNITE_ASSETS_ANIM_DRINK: usize = 100;
-pub const FORTNITE_ASSETS_ANIM_BUILD: usize = 101;
-pub const FORTNITE_ASSETS_ANIM_SIT: usize = 102;
-pub const FORTNITE_ASSETS_SND_PICKAXE_SWING: usize = 103;
-pub const FORTNITE_ASSETS_SND_HARVEST_HIT: usize = 104;
+pub const FORTNITE_ASSETS_MESH_CONE_WOOD: usize = 61;
+pub const FORTNITE_ASSETS_MESH_CONE_STONE: usize = 62;
+pub const FORTNITE_ASSETS_MESH_CONE_METAL: usize = 63;
+pub const FORTNITE_ASSETS_MESH_CHEST: usize = 64;
+pub const FORTNITE_ASSETS_SND_CHEST_OPEN: usize = 65;
+pub const FORTNITE_ASSETS_SND_CHEST_HUM: usize = 66;
+pub const FORTNITE_ASSETS_MESH_AMMO_BOX: usize = 67;
+pub const FORTNITE_ASSETS_SND_AMMO_BOX_OPEN: usize = 68;
+pub const FORTNITE_ASSETS_SND_NONE: usize = 69;
+pub const FORTNITE_ASSETS_UI_HEALTH_BAR: usize = 70;
+pub const FORTNITE_ASSETS_UI_SHIELD_BAR: usize = 71;
+pub const FORTNITE_ASSETS_UI_SLOT_FRAME: usize = 72;
+pub const FORTNITE_ASSETS_UI_BUILD_SLOTS: usize = 73;
+pub const FORTNITE_ASSETS_UI_RETICLES: usize = 74;
+pub const FORTNITE_ASSETS_UI_HITMARKER: usize = 75;
+pub const FORTNITE_ASSETS_ICON_GOLD: usize = 76;
+pub const FORTNITE_ASSETS_FONT_BURBANK: usize = 77;
+pub const FORTNITE_ASSETS_ANIM_IDLE: usize = 78;
+pub const FORTNITE_ASSETS_ANIM_JOG: usize = 79;
+pub const FORTNITE_ASSETS_ANIM_SPRINT: usize = 80;
+pub const FORTNITE_ASSETS_ANIM_JUMP: usize = 81;
+pub const FORTNITE_ASSETS_ANIM_FALL: usize = 82;
+pub const FORTNITE_ASSETS_ANIM_LAND: usize = 83;
+pub const FORTNITE_ASSETS_ANIM_CROUCH_IDLE: usize = 84;
+pub const FORTNITE_ASSETS_ANIM_CROUCH_WALK: usize = 85;
+pub const FORTNITE_ASSETS_ANIM_PICKAXE_IDLE: usize = 86;
+pub const FORTNITE_ASSETS_ANIM_PICKAXE_SWING: usize = 87;
+pub const FORTNITE_ASSETS_ANIM_PICKAXE_SWING2: usize = 88;
+pub const FORTNITE_ASSETS_ANIM_PICKAXE_SWING3: usize = 89;
+pub const FORTNITE_ASSETS_ANIM_PICKAXE_SWING4: usize = 90;
+pub const FORTNITE_ASSETS_ANIM_RIFLE_IDLE: usize = 91;
+pub const FORTNITE_ASSETS_ANIM_RIFLE_FIRE: usize = 92;
+pub const FORTNITE_ASSETS_ANIM_RIFLE_RELOAD: usize = 93;
+pub const FORTNITE_ASSETS_ANIM_RIFLE_ADS: usize = 94;
+pub const FORTNITE_ASSETS_ANIM_SHOTGUN_IDLE: usize = 95;
+pub const FORTNITE_ASSETS_ANIM_SHOTGUN_FIRE: usize = 96;
+pub const FORTNITE_ASSETS_ANIM_SHOTGUN_RELOAD: usize = 97;
+pub const FORTNITE_ASSETS_ANIM_PISTOL_IDLE: usize = 98;
+pub const FORTNITE_ASSETS_ANIM_PISTOL_FIRE: usize = 99;
+pub const FORTNITE_ASSETS_ANIM_PISTOL_RELOAD: usize = 100;
+pub const FORTNITE_ASSETS_ANIM_PISTOL_ADS: usize = 101;
+pub const FORTNITE_ASSETS_ANIM_LAUNCHER_IDLE: usize = 102;
+pub const FORTNITE_ASSETS_ANIM_LAUNCHER_FIRE: usize = 103;
+pub const FORTNITE_ASSETS_ANIM_LAUNCHER_RELOAD: usize = 104;
+pub const FORTNITE_ASSETS_ANIM_BANDAGE: usize = 105;
+pub const FORTNITE_ASSETS_ANIM_DRINK: usize = 106;
+pub const FORTNITE_ASSETS_ANIM_BUILD: usize = 107;
+pub const FORTNITE_ASSETS_ANIM_SIT: usize = 108;
+pub const FORTNITE_ASSETS_SND_PICKAXE_SWING: usize = 109;
+pub const FORTNITE_ASSETS_SND_HARVEST_HIT: usize = 110;
 
 /// Every piece of Fortnite content the mashup uses. Nothing here ships with the mod: the setup tool finds each row in the player's own Fortnite install (query = regex over package paths, '-> Prop' = foll
 #[derive(Debug)]
@@ -456,7 +468,7 @@ pub struct FortniteAssetsRow {
     pub required: bool,
 }
 
-pub static FORTNITE_ASSETS: [FortniteAssetsRow; 105] = [
+pub static FORTNITE_ASSETS: [FortniteAssetsRow; 111] = [
     FortniteAssetsRow { id: "outfit", kind: "skeletal_mesh", query: "outfit:{config.outfit}  (CID -> CharacterParts -> SkeletalMesh, merged)", out: "skeletal_mesh/outfit.glb", required: true },
     FortniteAssetsRow { id: "pickaxe", kind: "static_mesh", query: "pickaxe:{config.pickaxe}  (Pickaxe_ID -> WeaponDefinition -> mesh)", out: "static_mesh/pickaxe.glb", required: true },
     FortniteAssetsRow { id: "mesh_ar", kind: "static_mesh", query: "/Athena/Items/Weapons/WID_Assault_AutoHigh_Athena_R_Ore_T03$ -> WeaponMeshOverride|PickupStaticMesh|PickupSkeletalMesh", out: "static_mesh/mesh_ar.glb", required: true },
@@ -518,6 +530,9 @@ pub static FORTNITE_ASSETS: [FortniteAssetsRow; 105] = [
     FortniteAssetsRow { id: "mesh_wall_metal", kind: "static_mesh", query: "/Packages/PBW/Metal/L1/PBW_M1_Solid$", out: "static_mesh/mesh_wall_metal.glb", required: true },
     FortniteAssetsRow { id: "mesh_floor_metal", kind: "static_mesh", query: "/Packages/PBW/Metal/L1/PBW_M1_Floor$", out: "static_mesh/mesh_floor_metal.glb", required: true },
     FortniteAssetsRow { id: "mesh_ramp_metal", kind: "static_mesh", query: "/Packages/PBW/Metal/L1/PBW_M1_StairW$", out: "static_mesh/mesh_ramp_metal.glb", required: true },
+    FortniteAssetsRow { id: "mesh_cone_wood", kind: "static_mesh", query: "/Packages/PBW/Wood/L1/PBW_W1_RoofC$", out: "static_mesh/mesh_cone_wood.glb", required: true },
+    FortniteAssetsRow { id: "mesh_cone_stone", kind: "static_mesh", query: "/Packages/PBW/Brick/L1/PBW_B1_RoofC$", out: "static_mesh/mesh_cone_stone.glb", required: true },
+    FortniteAssetsRow { id: "mesh_cone_metal", kind: "static_mesh", query: "/Packages/PBW/Metal/L1/PBW_M1_RoofC$", out: "static_mesh/mesh_cone_metal.glb", required: true },
     FortniteAssetsRow { id: "mesh_chest", kind: "static_mesh", query: "/Gadgets/Assets/Chest_Mark_III/Meshes/Chest_Mark_III$", out: "static_mesh/mesh_chest.glb", required: true },
     FortniteAssetsRow { id: "snd_chest_open", kind: "sound", query: "(?i)/Sounds/Foley_Loot/Containers/Treasure_Chest/treasure_chest_open_latch_01$", out: "sound/snd_chest_open.wav", required: true },
     FortniteAssetsRow { id: "snd_chest_hum", kind: "sound", query: "(?i)/Sounds/Foley_Loot/Containers/Treasure_Chest/Treasure_Chest_Ambient_Loop_01$", out: "sound/snd_chest_hum.wav", required: true },
@@ -542,6 +557,9 @@ pub static FORTNITE_ASSETS: [FortniteAssetsRow; 105] = [
     FortniteAssetsRow { id: "anim_crouch_walk", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Crouch/NoWeapon/Crouch_NoWeapon_N_NoAdditive$  (AnimSequence on the Fortnite player skeleton, male medium)", out: "anim/anim_crouch_walk.psa", required: true },
     FortniteAssetsRow { id: "anim_pickaxe_idle", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/.*/PandaSpeak_Add_Pickaxe_IdlePose_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)", out: "anim/anim_pickaxe_idle.psa", required: true },
     FortniteAssetsRow { id: "anim_pickaxe_swing", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing1_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)", out: "anim/anim_pickaxe_swing.psa", required: true },
+    FortniteAssetsRow { id: "anim_pickaxe_swing2", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing2_CMM$  (AnimSequence on the Fortnite player skeleton, male medium; the default one-handed pickaxe set, played in turn)", out: "anim/anim_pickaxe_swing2.psa", required: true },
+    FortniteAssetsRow { id: "anim_pickaxe_swing3", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing3_CMM$  (AnimSequence on the Fortnite player skeleton, male medium; the default one-handed pickaxe set, played in turn)", out: "anim/anim_pickaxe_swing3.psa", required: true },
+    FortniteAssetsRow { id: "anim_pickaxe_swing4", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing4_CMM$  (AnimSequence on the Fortnite player skeleton, male medium; the default one-handed pickaxe set, played in turn)", out: "anim/anim_pickaxe_swing4.psa", required: true },
     FortniteAssetsRow { id: "anim_rifle_idle", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Locomotion/Medium/Male/Jog/AssaultRifle_HipNonTargeted/M_Jog_AssaultRifle_N_Core$  (full-pose 'Core' stance; the Idle/IdleNoise/Patrol clips are additive layers)", out: "anim/anim_rifle_idle.psa", required: true },
     FortniteAssetsRow { id: "anim_rifle_fire", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Combat/Guns/AssaultRifle/AssaultRifle_Fire_CH5$  (AnimSequence on the Fortnite player skeleton, male medium)", out: "anim/anim_rifle_fire.psa", required: true },
     FortniteAssetsRow { id: "anim_rifle_reload", kind: "anim", query: "(?i)/Animation/Game/MainPlayer/Combat/Guns/AssaultRifle/AssaultRifle_FCBA_Reload_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)", out: "anim/anim_rifle_reload.psa", required: true },

@@ -437,6 +437,27 @@
    "required": true
   },
   {
+   "id": "mesh_cone_wood",
+   "kind": "static_mesh",
+   "query": "/Packages/PBW/Wood/L1/PBW_W1_RoofC$",
+   "out": "static_mesh/mesh_cone_wood.glb",
+   "required": true
+  },
+  {
+   "id": "mesh_cone_stone",
+   "kind": "static_mesh",
+   "query": "/Packages/PBW/Brick/L1/PBW_B1_RoofC$",
+   "out": "static_mesh/mesh_cone_stone.glb",
+   "required": true
+  },
+  {
+   "id": "mesh_cone_metal",
+   "kind": "static_mesh",
+   "query": "/Packages/PBW/Metal/L1/PBW_M1_RoofC$",
+   "out": "static_mesh/mesh_cone_metal.glb",
+   "required": true
+  },
+  {
    "id": "mesh_chest",
    "kind": "static_mesh",
    "query": "/Gadgets/Assets/Chest_Mark_III/Meshes/Chest_Mark_III$",
@@ -602,6 +623,27 @@
    "kind": "anim",
    "query": "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing1_CMM$  (AnimSequence on the Fortnite player skeleton, male medium)",
    "out": "anim/anim_pickaxe_swing.psa",
+   "required": true
+  },
+  {
+   "id": "anim_pickaxe_swing2",
+   "kind": "anim",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing2_CMM$  (AnimSequence on the Fortnite player skeleton, male medium; the default one-handed pickaxe set, played in turn)",
+   "out": "anim/anim_pickaxe_swing2.psa",
+   "required": true
+  },
+  {
+   "id": "anim_pickaxe_swing3",
+   "kind": "anim",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing3_CMM$  (AnimSequence on the Fortnite player skeleton, male medium; the default one-handed pickaxe set, played in turn)",
+   "out": "anim/anim_pickaxe_swing3.psa",
+   "required": true
+  },
+  {
+   "id": "anim_pickaxe_swing4",
+   "kind": "anim",
+   "query": "(?i)/Animation/Game/MainPlayer/Combat/Melee/OneHanded/CAS/CAS_Pickaxe_Harvesting_Swing4_CMM$  (AnimSequence on the Fortnite player skeleton, male medium; the default one-handed pickaxe set, played in turn)",
+   "out": "anim/anim_pickaxe_swing4.psa",
    "required": true
   },
   {
@@ -1056,6 +1098,15 @@
    "query"
   ],
   "snd_harvest_hit": [
+   "query"
+  ],
+  "mesh_cone_wood": [
+   "query"
+  ],
+  "mesh_cone_stone": [
+   "query"
+  ],
+  "mesh_cone_metal": [
    "query"
   ]
  },

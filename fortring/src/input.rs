@@ -159,6 +159,12 @@ pub fn frame() -> Frame {
 
 impl Frame {
     fn state(&self, key: &str, prev: bool) -> bool {
+        // the wheel has no held state: a notch this frame counts as a press
+        match key {
+            "WHEELUP" => return !prev && self.wheel > 0.0,
+            "WHEELDOWN" => return !prev && self.wheel < 0.0,
+            _ => {}
+        }
         if let Some(b) = key.strip_prefix("MOUSE").and_then(|n| n.parse::<usize>().ok()) {
             let i = b.saturating_sub(1).min(MOUSE_BUTTONS - 1);
             return if prev { self.prev_mouse[i] } else { self.mouse[i] };
@@ -186,7 +192,7 @@ pub fn passthrough(row: &ControlsRow, on: bool) {
 /// DirectInput scan codes for the key names used in sheets/controls.json.
 pub fn dik(name: &str) -> Option<usize> {
     Some(match name {
-        "ESCAPE" => 0x01, "1" => 0x02, "2" => 0x03, "3" => 0x04, "4" => 0x05, "5" => 0x06, "6" => 0x07,
+        "ESCAPE" => 0x01, "EQUALS" => 0x0D, "1" => 0x02, "2" => 0x03, "3" => 0x04, "4" => 0x05, "5" => 0x06, "6" => 0x07,
         "Q" => 0x10, "W" => 0x11, "E" => 0x12, "R" => 0x13, "T" => 0x14, "G" => 0x22, "H" => 0x23,
         "A" => 0x1E, "S" => 0x1F, "D" => 0x20, "F" => 0x21, "Z" => 0x2C, "X" => 0x2D, "C" => 0x2E, "V" => 0x2F,
         "B" => 0x30, "M" => 0x32, "LCONTROL" => 0x1D, "LSHIFT" => 0x2A, "SPACE" => 0x39, "TAB" => 0x0F,
@@ -200,7 +206,7 @@ mod tests {
     #[test]
     fn every_bound_key_is_known() {
         for r in crate::generated::CONTROLS.iter() {
-            assert!(r.key.starts_with("MOUSE") || super::dik(r.key).is_some(), "{}", r.key);
+            assert!(r.key.starts_with("MOUSE") || r.key.starts_with("WHEEL") || r.key == "NONE" || super::dik(r.key).is_some(), "{}", r.key);
             assert!(r.er_key == "none" || super::dik(r.er_key).is_some(), "{}", r.er_key);
         }
     }
