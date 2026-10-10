@@ -303,14 +303,16 @@ pub fn falloff(row: &WeaponsRow, dist: f32) -> f32 {
 }
 
 /// Weapon tick: slots, ADS, fire, reload. `muzzle` is the chest of the character.
-pub fn tick(st: &mut State, inp: &Frame, dt: f32, muzzle: Vec3, cam_pos: Vec3, cam_fwd: Vec3) {
-    st.fire_cooldown = (st.fire_cooldown - dt).max(0.0);
-    st.hit_marker = (st.hit_marker - dt).max(0.0);
+/// Hotbar keys, in combat and in build mode: 1-5 or the pickaxe key leave build mode and select that slot
+/// (an empty slot keeps what was held).
+pub fn select(st: &mut State, inp: &Frame) {
     for (i, c) in [CONTROLS_SLOT1, CONTROLS_SLOT2, CONTROLS_SLOT3, CONTROLS_SLOT4, CONTROLS_SLOT5].into_iter().enumerate() {
-        if inp.pressed(c) && (st.saved.slots[i].is_some() || st.saved.heal_slots[i].is_some()) {
-            st.held = Held::Slot(i);
-            st.reload_left = 0.0;
-            st.mode = crate::state::Mode::Combat; // a weapon key leaves build mode
+        if inp.pressed(c) {
+            st.mode = crate::state::Mode::Combat;
+            if st.saved.slots[i].is_some() || st.saved.heal_slots[i].is_some() {
+                st.held = Held::Slot(i);
+                st.reload_left = 0.0;
+            }
         }
     }
     if inp.pressed(CONTROLS_PICKAXE) {
@@ -318,6 +320,11 @@ pub fn tick(st: &mut State, inp: &Frame, dt: f32, muzzle: Vec3, cam_pos: Vec3, c
         st.reload_left = 0.0;
         st.mode = crate::state::Mode::Combat;
     }
+}
+
+pub fn tick(st: &mut State, inp: &Frame, dt: f32, muzzle: Vec3, cam_pos: Vec3, cam_fwd: Vec3) {
+    st.fire_cooldown = (st.fire_cooldown - dt).max(0.0);
+    st.hit_marker = (st.hit_marker - dt).max(0.0);
     let aiming = inp.down(CONTROLS_AIM) && st.held_gun().is_some() && st.reload_left <= 0.0;
     let blend = dt / CAMERA_ADS_BLEND_S_V.max(0.01);
     st.ads = if aiming { (st.ads + blend).min(1.0) } else { (st.ads - blend).max(0.0) };

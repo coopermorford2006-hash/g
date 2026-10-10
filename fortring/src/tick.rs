@@ -204,6 +204,7 @@ pub fn gameplay() {
     fr.view = fr.cam;
     crate::audio::set_listener(cam_pos);
 
+    guns::select(&mut st, &inp);
     if st.mode == Mode::Build {
         building::tick(&mut st, &inp, dt, t, cam_pos, cam_fwd);
         st.fire_cooldown = (st.fire_cooldown - dt).max(0.0);
